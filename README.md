@@ -34,7 +34,7 @@ features = 3
 
 negentropy can run in three places:
 
-- In CI before a merge: add the step `uses: milanofthe/negentropy@main` after a checkout with
+- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.0.0` after a checkout with
   `fetch-depth: 0`.
 - At every commit: run `git config --global core.hooksPath <clone>/hooks` once per machine.
 - After every edit by a coding agent: register `sh <clone>/hooks/agent` as a hook of the agent.
