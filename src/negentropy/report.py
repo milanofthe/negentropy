@@ -25,6 +25,18 @@ def counts(findings: list[Finding]) -> dict[str, int]:
     return {check: len(items([f for f in findings if f.check == check])) for check in {f.check for f in findings}}
 
 
+def unresolved(findings: list[Finding]) -> list[Finding]:
+    return [finding for finding in findings if not finding.reason]
+
+
+def with_reported(report: str, findings: list[Finding], book: Rulebook) -> str:
+    listed = items([Finding("", f.path, f.line, f"{f.check}: {f.reason}") for f in findings if f.reason])
+    if not listed:
+        return report
+    block = "\n".join([f"# Reported ({len(listed)})", book.reported, "", *listed])
+    return "\n\n".join([report, block])
+
+
 def render(findings: list[Finding], book: Rulebook, next_phase_only: bool = False) -> str:
     sections = [(rule, items([f for f in findings if f.check == rule.name])) for rule in book.rules]
     sections = [(rule, listed) for rule, listed in sections if listed]

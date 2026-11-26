@@ -2,11 +2,14 @@ terms: >-
   A finding is resolved by the change that its message describes. A change that only hides the code
   from the check does not resolve the finding. Examples are moving code into a macro, adding an entry
   under `allow` or `exempt` in negentropy.toml, suppressing a lint, deleting or disabling a test, and
-  loosening a bound. If you cannot resolve a finding in the way that its message describes, leave the
-  finding in place and report it to the owner of the repository with its location and the reason. A
-  finding that you report is a valid result of your work, and a finding that you hide is not. If a
-  fix changes behaviour or a public interface, name that change in your report. Only the owner adds
-  exceptions to negentropy.toml.
+  loosening a bound. If you cannot resolve a finding in the way that its message describes, or if the
+  check is wrong about this code, leave the code as it is and report the finding. To report it, add
+  an entry `[[reported]]` to negentropy.toml with the name of the check as `check`, a regular
+  expression for the path followed by the source line as `match`, and one sentence as `reason`. A
+  reported finding does not fail the check, and it stays in every report until the owner of the
+  repository decides about it. A finding that you report is a valid result of your work, and a
+  finding that you hide is not. If a fix changes behaviour or a public interface, name that change
+  when you hand over your work. Only the owner adds entries under `allow` and `exempt`.
 
 phases:
   - name: remove
@@ -26,11 +29,14 @@ phases:
     checks: [doc-comment, comment, long-name, characters]
   - name: count
     reason: Declare the counts at the end, when the earlier phases have settled them.
-    checks: [budget]
+    checks: [budget, reported]
   - name: history
     reason: These findings concern commit messages and pull requests, not the codebase.
     checks: [commit-message, attribution]
 own_phase: restructure
+reported: >-
+  These findings are reported and not resolved. The owner of the repository decides for each one
+  whether it gets fixed, whether its check gets corrected or whether it moves to `allow`.
 
 languages:
   html: ["*.svelte"]

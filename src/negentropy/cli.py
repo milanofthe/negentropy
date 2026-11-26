@@ -10,7 +10,7 @@ from negentropy.codebase import Codebase, changed_since, export, has_revision, r
 from negentropy.config import Config
 from negentropy.engine import Engine
 from negentropy.finding import Finding, ToolError
-from negentropy.report import counts, render
+from negentropy.report import counts, render, unresolved, with_reported
 from negentropy.rules import Rulebook
 
 
@@ -53,7 +53,7 @@ def at_revision(root: Path, revision: str, book: Rulebook, config: Config) -> li
 
 
 def compared(found: list[Finding], root: Path, revision: str, book: Rulebook, config: Config) -> tuple[str, int]:
-    now, before = counts(found), counts(at_revision(root, revision, book, config))
+    now, before = counts(found), counts(unresolved(at_revision(root, revision, book, config)))
     grown = {check: count for check, count in now.items() if count > before.get(check, 0)}
     if not grown:
         kept = ", ".join(f"{check} {count}" for check, count in sorted(now.items()))
@@ -82,10 +82,13 @@ def main(argv: list[str] | None = None) -> int:
         print(f"negentropy: {error}", file=sys.stderr)
         return 2
     against = getattr(args, "against", None)
-    if against and found:
-        report, status = compared(found, root, against, book, config)
+    open_findings = unresolved(found)
+    if against and open_findings:
+        report, status = compared(open_findings, root, against, book, config)
     else:
-        report, status = render(found, book, next_phase_only=args.command == "next"), 1 if found else 0
+        report = render(open_findings, book, next_phase_only=args.command == "next")
+        status = 1 if open_findings else 0
+    report = with_reported(report, found, book)
     try:
         print(report, flush=True)
     except BrokenPipeError:

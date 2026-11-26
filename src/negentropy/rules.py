@@ -18,7 +18,7 @@ SHARED_KEYS = {"matches", "unless", "in", "not_in", "detail", "digits_over", "di
 RULE_KEYS = SHARED_KEYS | {
     "name", "message", "cleanup", "phase", "kind", "subject", "select", "counts", "tokens", "unless_subject",
 }
-KINDS = {"each", "unique", "count"}
+KINDS = {"each", "unique", "count", "unmatched"}
 
 
 def listed(value) -> tuple:
@@ -140,6 +140,7 @@ class Rulebook:
     scopes: dict[str, Scope]
     languages: dict[str, list[str]]
     terms: str = ""
+    reported: str = ""
 
     @classmethod
     def load(cls, root: Path, config: Config) -> Rulebook:
@@ -160,9 +161,10 @@ class Rulebook:
             raise ToolError(f"the checks {misplaced} name a phase that does not exist; the phases are {order}")
         rules.sort(key=lambda rule: order.index(rule.phase))
         names = [rule.name for rule in rules]
-        unknown = (set(config.off) | set(config.allow)) - set(names)
+        excepted = set(config.allow) | {entry["check"] for entry in config.reported}
+        unknown = (set(config.off) | excepted) - set(names)
         if unknown or len(names) != len(set(names)):
-            raise ToolError(f"check names must be unique, and `off` and `allow` may only name existing checks; unknown: {sorted(unknown)}")
+            raise ToolError(f"check names must be unique, and `off`, `allow` and `reported` may only name existing checks; unknown: {sorted(unknown)}")
         scopes = {}
         for name, raw in base["scopes"].items():
             configured = getattr(config, raw["config"]) if "config" in raw else None
@@ -173,7 +175,7 @@ class Rulebook:
                 selectors=selectors(raw, f"scope {name}"),
                 everywhere="config" in raw and paths is None,
             )
-        book = cls(tuple(rule for rule in rules if rule.name not in config.off), phases, scopes, base["languages"], base["terms"])
+        book = cls(tuple(rule for rule in rules if rule.name not in config.off), phases, scopes, base["languages"], base["terms"], base["reported"])
         for rule in book.rules:
             for selector in rule.all_selectors:
                 missing = set(selector.within + selector.outside) - set(scopes)

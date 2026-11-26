@@ -9,6 +9,7 @@ class Finding:
     path: str
     line: int
     detail: str = ""
+    reason: str = ""
 
 
 class ToolError(Exception):
