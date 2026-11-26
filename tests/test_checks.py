@@ -334,3 +334,20 @@ INTERNAL_DOCS = (
 def test_a_doc_comment_inside_a_private_enum_or_a_thread_local_is_internal(repo):
     write(repo, {"src/lib.rs": INTERNAL_DOCS})
     assert found(repo) == {("src/lib.rs", 2, "doc-comment"), ("src/lib.rs", 10, "doc-comment")}
+
+
+def test_a_poisoned_lock_may_panic_and_a_test_file_beside_the_code_is_a_test(repo):
+    write(repo, {
+        "src/cache.rs": (
+            "fn held(cache: &std::sync::Mutex<Vec<u8>>, table: &std::sync::RwLock<Vec<u8>>) -> usize {\n"
+            "    let stored = cache.lock().unwrap().len();\n"
+            "    let read = table\n"
+            "        .read()\n"
+            "        .unwrap()\n"
+            "        .len();\n"
+            "    stored + read + table.write().expect(\"not poisoned\").pop().unwrap() as usize\n"
+            "}\n"
+        ),
+        "src/cache_tests.rs": "fn check() { assert_eq!(Some(1).unwrap(), 1); }\n",
+    })
+    assert found(repo) == {("src/cache.rs", 7, "unwrap")}
