@@ -54,7 +54,7 @@ scopes:
               not:
                 kind: attribute_item
             kind: attribute_item
-            regex: 'cfg\(test\)'
+            regex: '^#\[cfg\((all\(\s*)?test\b'
   assertion:
     select:
       - language: rust
