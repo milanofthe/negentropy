@@ -37,6 +37,8 @@ def export(root: Path, revision: str, directory: Path) -> list[str]:
             if member.isfile():
                 members.extract(member, directory, filter="data")
                 exported.append(member.name)
+        padding_after_the_last_member = archive.stdout
+        padding_after_the_last_member.read()
     if archive.wait():
         raise ToolError(f"git archive {revision} failed")
     return exported

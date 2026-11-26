@@ -4,7 +4,7 @@ import pytest
 
 from negentropy import engine, messages
 from negentropy.cli import main
-from negentropy.codebase import Codebase
+from negentropy.codebase import Codebase, export
 from negentropy.config import Config
 from negentropy.rules import Rulebook
 
@@ -391,3 +391,12 @@ def test_a_commit_may_keep_the_findings_of_its_parent_but_not_add_one(repo, monk
     write(repo, {"a.py": "x = 1\n", "b.py": "y = 2\n"})
     assert main(["check", "--against", "HEAD"]) == 0
     assert capsys.readouterr().out == "negentropy: clean\n"
+
+
+def test_the_export_of_a_revision_reads_the_archive_to_its_end(repo, tmp_path_factory):
+    sizes_whose_end_marker_starts_a_new_tar_record = (8192, 18432)
+    for size in sizes_whose_end_marker_starts_a_new_tar_record:
+        write(repo, {"wide.txt": "x" * size})
+        git(repo, "add", "-A")
+        git(repo, "commit", "-q", "-m", "Start")
+        assert export(repo, "HEAD", tmp_path_factory.mktemp("exported")) == ["wide.txt"]
