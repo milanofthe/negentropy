@@ -43,6 +43,7 @@ codebase prints `negentropy: clean` and exits 0.
 | `print` | `println!`, `eprintln!` or `dbg!` in Rust library code |
 | `environment` | an environment variable read in Rust or Python library code |
 | `dead-code` | `allow(dead_code)` or `allow(unused...)` outside tests |
+| `duplicate` | a function of 25 tokens or more that is another one with its variables renamed |
 | `budget` | a count that differs from the one the repository declares: constants in the constants modules, Cargo features |
 | `commit-message` | a commit message with more than one line |
 | `attribution` | a commit or pull request that names an AI tool as author |
@@ -54,6 +55,10 @@ in Rust, by `#[cfg(test)]`.
 The 7 digits of `pinned-value` are measured on about 6000 float literals in the tests of three
 numerical libraries, counted by significant digits: 56 have 5 to 7, 8 have 8 or 9, and 194 have 10 or
 more, most of them 15 to 17, the length of printed output.
+
+The 25 tokens of `duplicate` are measured on the same three libraries (about 10000 functions): 145
+surplus copies at 25 tokens, 77 at 40 and 44 at 60. The copies between 25 and 39 tokens were read: helpers
+defined twice and the same method on several types.
 
 ## Install
 
