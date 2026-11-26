@@ -1,5 +1,5 @@
 name: negentropy
-description: Checks the whole codebase and the commits of a pull request, and lists what to fix.
+description: Checks the whole codebase and the commit messages of a pull request and lists the findings.
 runs:
   using: composite
   steps:

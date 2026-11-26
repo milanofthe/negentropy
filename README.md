@@ -1,19 +1,21 @@
 # negentropy
 
-Checks that keep a codebase from decaying while agents and people change it.
+negentropy is a set of checks that keep a codebase from decaying while agents and people change it.
 
-![negentropy checks a codebase against checks kept as data and returns a checklist of findings to fix](docs/negentropy.svg)
+![negentropy runs its checks on a codebase and returns the findings as a checklist](docs/negentropy.svg)
 
 ```
 pipx install git+https://github.com/milanofthe/negentropy
 negentropy
 ```
 
-One command checks the whole codebase and prints what to fix as a checklist. A check is a YAML file
-with the message that says what to do: the [built-in ones](src/negentropy/checks), and a
-repository's own beside them.
+The command checks the whole codebase and prints the findings as a checklist. Each check is defined
+in a YAML file, which also contains the message that explains how to fix a finding. The built-in
+checks are in [src/negentropy/checks](src/negentropy/checks). A repository can add its own checks in
+the same format.
 
-`negentropy.toml` at the root of a repository, every key optional:
+negentropy reads its configuration from `negentropy.toml` at the root of the repository. All keys are
+optional.
 
 ```toml
 public = ["src/api/**"]
@@ -30,8 +32,11 @@ constants = 40
 features = 3
 ```
 
-Before a merge: `uses: milanofthe/negentropy@main` after a checkout with `fetch-depth: 0`.
-At a commit: `git config --global core.hooksPath <clone>/hooks`.
-After an edit of a coding agent: `sh <clone>/hooks/agent` as its hook.
+negentropy can run in three places:
 
-MIT
+- In CI before a merge: add the step `uses: milanofthe/negentropy@main` after a checkout with
+  `fetch-depth: 0`.
+- At every commit: run `git config --global core.hooksPath <clone>/hooks` once per machine.
+- After every edit by a coding agent: register `sh <clone>/hooks/agent` as a hook of the agent.
+
+negentropy is released under the MIT license.

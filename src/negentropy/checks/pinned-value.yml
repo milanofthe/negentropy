@@ -1,9 +1,10 @@
 name: pinned-value
 message: >-
-  A number with more than 7 significant digits in a test: it was copied from a program's output.
-  A reference value is a named constant with its source in the constants module. The code's own output
-  is no reference: test the contract (a reference, an invariant, the API) or drop the test.
-  Input data does not need the digits: generate it from a seed or round it.
+  This number in a test has more than 7 significant digits, so it was copied from program output. If
+  it is a reference value, define it as a named constant in the constants module and state its source
+  there. If it is the output of the code under test, it is not a reference. In that case, test a
+  contract such as a reference solution, an invariant or the API, or delete the test. If the number is
+  input data, generate it from a seed or round it.
 digits_over: 7
 in: [test]
 not_in: [constants]

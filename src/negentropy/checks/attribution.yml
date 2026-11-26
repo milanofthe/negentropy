@@ -1,8 +1,8 @@
 name: attribution
 subject: [commit, text]
 message: >-
-  A commit or a pull request that names an AI tool as author. The person who commits is the author:
-  remove the line.
+  This commit or pull request names an AI tool as an author. The author is the person who commits.
+  Remove the attribution line.
 select:
   - line: '(?i)co-authored-by:.*\b(claude|anthropic|copilot|cursor|codex|chatgpt|openai|gemini|devin|aider)\b'
   - line: '(?i)generated (with|by)\b.*\b(claude|anthropic|copilot|cursor|codex|chatgpt|openai|gemini|devin|aider)\b'

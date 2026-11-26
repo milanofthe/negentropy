@@ -1,43 +1,49 @@
 ---
 name: correct
-description: Turn a correction that came twice into a negentropy check, so the mistake fails the next change instead of being corrected again. Use when the same kind of mistake was corrected a second time, or when asked to add a check.
+description: Turns a mistake that was corrected twice into a negentropy check, so that the next change with this mistake fails. Use this skill when the same kind of mistake has been corrected a second time, or when you are asked to add a check.
 ---
 
 # Correct
 
-A correction given twice is a class of mistake. Change the repository so the next change cannot make it.
+When the same correction has been given twice, treat the mistake as a class of mistakes. Change the
+repository so that the next change cannot make this mistake.
 
-Assume the next contributor sees only the files it opened, copies the nearest example and takes the
-shortest path that passes. A change that looks right from one file has to be right for the whole
-repository.
+Assume that the next contributor reads only the files it opens, copies the nearest example and takes
+the shortest path that passes. A change that looks correct from one file must be correct for the
+whole repository.
 
-## Fix the class at the highest level that holds
+## Fix the class at the highest level that works
 
-1. Structure: one owner per piece of state, one supported way per task, internals that cannot be
-   imported, the old way deleted so it cannot be copied.
-2. Types: the wrong state cannot be written.
-3. A check: where wrong code still compiles, a negentropy check whose message names what to do
+Try these levels in order and stop at the first one that prevents the mistake.
+
+1. Structure. Give each piece of state one owner and each task one supported way. Hide internals so
+   that they cannot be imported. Delete the old way so that it cannot be copied.
+2. Types. Change the types so that the wrong state cannot be written.
+3. A check. If wrong code still compiles, add a negentropy check whose message says what to do
    instead.
-4. A test of the behaviour, where the contract can be stated: a reference, an invariant, the API.
-5. Prose in the agent instructions, only for what needs judgment. Nothing fails when it is skipped.
+4. A test. Test the behaviour if you can state the contract, for example a reference solution, an
+   invariant or the API.
+5. Prose. Add a rule to the agent instructions only if the rule needs judgment, because nothing
+   fails when an agent skips it.
 
-A fix at one level is not repeated at a lower one.
+Do not repeat a fix at a lower level once a higher level prevents the mistake.
 
 ## Add a check
 
-1. Find the mistake in the history: the commits, the review comments, the corrections. Keep two real
-   instances.
-2. Decide what marks it in the text or on the syntax tree. If the mark needs judgment to apply, the
-   check will be wrong half of the time: go back to the levels above.
-3. Run the candidate over the codebases it will guard and read what it hits. Keep it only if what it
-   hits is the mistake.
-4. Write the check as one YAML file: the name, the message, the selectors. The message says what is
-   wrong, why, and what to do instead, in that order. A check that holds for every codebase goes to
-   `src/negentropy/checks` and into the list in `base.yml`; one that holds for this repository goes to
-   the directory `negentropy.toml` lists under `rules`.
-5. Write the test from the two real instances, and one case that must pass.
+1. Find the mistake in the history, for example in commits, review comments and corrections. Keep
+   two real instances of it.
+2. Decide which feature of the text or of the syntax tree identifies the mistake. If applying this
+   feature needs judgment, the check will produce many false findings. In that case, go back to the
+   levels above.
+3. Run the candidate check on the codebases that will use it and read the findings. Keep the check
+   only if the findings are the mistake.
+4. Write the check as one YAML file with a name, a message and selectors. The message must say what
+   is wrong, why it is a problem and what to do instead, in this order. If the check applies to every
+   codebase, put it into `src/negentropy/checks` and add it to the list in `base.yml`. If it applies
+   only to this repository, put it into the directory that `negentropy.toml` lists under `rules`.
+5. Write a test from the two real instances and add one case that must pass.
 
 ## Report
 
-The class with its two instances, the level chosen, why no higher level held, and what the candidate
-hit on real code.
+Report the class of mistake with its two instances, the level that you chose, the reason why no
+higher level worked, and the findings of the candidate check on real code.

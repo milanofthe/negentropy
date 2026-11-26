@@ -1,7 +1,7 @@
 name: dead-code
 message: >-
-  An allowance for dead or unused code. Code that nothing uses is deleted, version control keeps it.
-  An old path kept beside its replacement is the one the next reader copies.
+  This attribute allows dead or unused code. Delete the unused code instead, because version control
+  keeps the old version. Old code that stays next to its replacement gets copied into new code.
 not_in: [test]
 select:
   - language: rust

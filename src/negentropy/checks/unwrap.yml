@@ -1,7 +1,7 @@
 name: unwrap
 message: >-
-  `unwrap` or `expect` in library code: a panic on a path the caller cannot handle.
-  Return the error, or make the failing state unrepresentable in the type.
+  This library code calls `unwrap` or `expect`, which panics on a path that the caller cannot handle.
+  Return the error instead, or change the types so that the failing state cannot occur.
 in: [library]
 not_in: [test]
 select:

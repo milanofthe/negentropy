@@ -1,11 +1,11 @@
 name: doc-comment
 message: >-
-  A doc comment that is not API documentation. Doc comments stay on the items the language exports,
-  inside the paths negentropy.toml lists as `public`. Delete it; if the item needs explaining,
-  rename or restructure it.
+  This doc comment does not document the public API. Doc comments are allowed only on exported items
+  inside the paths that negentropy.toml lists under `public`. Delete the doc comment. If the item
+  needs an explanation, rename or restructure it.
 select:
   - language: rust
-    detail: on an internal item
+    detail: the item is internal
     rule:
       any:
         - kind: line_comment
@@ -46,7 +46,7 @@ select:
             kind: visibility_modifier
             regex: '^pub$'
   - language: python
-    detail: on an internal item
+    detail: the item is internal
     rule:
       kind: string
       inside:
@@ -73,7 +73,7 @@ select:
                   stopBy: end
                   kind: function_definition
   - language: [javascript, typescript, tsx]
-    detail: on an internal item
+    detail: the item is internal
     rule:
       kind: comment
       regex: '^/\*\*'
@@ -85,7 +85,7 @@ select:
               stopBy: end
               kind: export_statement
   - language: rust
-    detail: outside the public API
+    detail: the file is outside the public API
     not_in: [public]
     rule:
       any:
@@ -96,7 +96,7 @@ select:
           - kind: outer_doc_comment_marker
           - kind: inner_doc_comment_marker
   - language: python
-    detail: outside the public API
+    detail: the file is outside the public API
     not_in: [public]
     rule:
       kind: string
@@ -116,7 +116,7 @@ select:
                   - kind: function_definition
                   - kind: class_definition
   - language: [javascript, typescript, tsx]
-    detail: outside the public API
+    detail: the file is outside the public API
     not_in: [public]
     rule:
       kind: comment
