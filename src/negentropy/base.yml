@@ -13,7 +13,7 @@ phases:
     checks: [literal, test-bound, pinned-value]
   - name: text
     reason: Clean up comments and characters last, because they describe code that the earlier phases change.
-    checks: [doc-comment, comment, characters]
+    checks: [doc-comment, comment, long-name, characters]
   - name: count
     reason: Declare the counts at the end, when the earlier phases have settled them.
     checks: [budget]

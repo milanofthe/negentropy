@@ -2,11 +2,14 @@ name: unwrap
 message: >-
   This library code calls `unwrap` or `expect`, which panics on a path that the caller cannot handle.
   Return the error to the caller, or change the types so that the failing state cannot occur. Do not
-  replace the panic with a silent fallback, because the caller must be able to notice the failure. If
+  replace the panic with a silent fallback, because the caller must be able to notice the failure. Do
+  not trade the panic for unsafe code, and do not pair two sequences with an adaptor such as `zip`
+  that stops silently at the shorter one. If
   the value can only be missing through a bug in this crate, and the types cannot exclude that without
   a larger change, ask the owner of negentropy.toml to allow this line. An `unwrap` directly on
   `lock()`, `read()` or `write()` is not reported, because it only passes on the panic of the
-  thread that poisoned the lock.
+  thread that poisoned the lock. A panic macro such as `unreachable!` on the `None` or `Err` branch
+  of a value is reported like an `unwrap`, because it is the same panic in another form.
 cleanup: >-
   Start with the functions that already return a Result, where the error can be passed on with `?`.
   For the other functions, decide whether the failure is an error for the caller or a state that the
@@ -27,3 +30,42 @@ select:
             field: value
             kind: call_expression
             regex: '\.(lock|read|write)\(\s*\)$'
+  - language: rust
+    detail: this panic on a missing value is an unwrap in another form
+    rule:
+      kind: macro_invocation
+      has:
+        field: macro
+        regex: '^(unreachable|panic|todo|unimplemented)$'
+      any:
+        - inside:
+            stopBy: end
+            kind: match_arm
+            has:
+              field: pattern
+              regex: '^(None|Err\b.*)$'
+        - inside:
+            stopBy: end
+            kind: closure_expression
+            inside:
+              kind: arguments
+              inside:
+                kind: call_expression
+                has:
+                  field: function
+                  regex: '\.\s*(unwrap_or_else|or_else)$'
+        - inside:
+            stopBy: end
+            kind: block
+            inside:
+              kind: let_declaration
+              regex: '^let\s+(Some|Ok)\b'
+        - inside:
+            stopBy: end
+            kind: else_clause
+            inside:
+              kind: if_expression
+              has:
+                field: condition
+                kind: let_condition
+                regex: '^let\s+(Some|Ok)\b'

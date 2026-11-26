@@ -1,0 +1,78 @@
+name: long-name
+message: >-
+  This name is longer than 32 characters, so it reads as a sentence and not as a name. A name says
+  what a thing is. It does not give the reason for the code and it does not list the conditions
+  under which the code is valid. Shorten the name to what the thing is. If the part that you remove
+  states a constraint, express it with a type, an assertion or a test. If it states a reason or a
+  measurement, record it as the comment check describes. The name of a test function is not
+  reported, because it states the contract that the test guards.
+cleanup: >-
+  Rename one item at a time and let the compiler or the tests find its uses.
+matches: '^\w{33,}$'
+select:
+  - language: rust
+    rule:
+      any:
+        - kind: identifier
+          inside:
+            kind: function_item
+            field: name
+            not:
+              follows:
+                stopBy:
+                  not:
+                    kind: attribute_item
+                kind: attribute_item
+                regex: 'test'
+        - kind: identifier
+          inside:
+            any:
+              - kind: const_item
+              - kind: static_item
+              - kind: enum_variant
+              - kind: function_signature_item
+            field: name
+        - kind: identifier
+          inside:
+            any:
+              - kind: let_declaration
+              - kind: parameter
+            field: pattern
+        - kind: field_identifier
+          inside:
+            kind: field_declaration
+            field: name
+        - kind: type_identifier
+          inside:
+            any:
+              - kind: struct_item
+              - kind: enum_item
+              - kind: type_item
+              - kind: trait_item
+            field: name
+  - language: python
+    rule:
+      any:
+        - kind: identifier
+          not:
+            regex: '^test_'
+          inside:
+            kind: function_definition
+            field: name
+        - kind: identifier
+          inside:
+            kind: class_definition
+            field: name
+        - kind: identifier
+          inside:
+            kind: assignment
+            field: left
+        - kind: identifier
+          inside:
+            kind: parameters
+        - kind: identifier
+          inside:
+            any:
+              - kind: default_parameter
+              - kind: typed_default_parameter
+            field: name
