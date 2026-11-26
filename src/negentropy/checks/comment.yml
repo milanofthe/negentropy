@@ -2,12 +2,16 @@ name: comment
 message: >-
   This is a comment in code. No tool checks whether a comment is still true, so comments go stale and
   mislead the next reader. Delete the comment and express its content in code, for example with a
-  better name, a type, an assertion or a test. You may keep a comment that describes a constraint from
-  outside the repository if it links to the source of that constraint.
+  better name, a type, an assertion or a test. If the comment gives the reason for a surprising
+  choice, put the reason into a name or into a test that fails when the choice is reverted. You may
+  keep a comment that describes a constraint from outside the repository if it links to the source of
+  that constraint.
 cleanup: >-
-  Work through one file at a time. First find the comments that state a constraint, which often
-  contain words such as must, never, before or because, and express each constraint in code or in a
-  test. Then delete the remaining comments.
+  Work through one file at a time. First find the comments that state a constraint or a reason, which
+  often contain words such as must, never, before or because, and express each one in code or in a
+  test. After you express a constraint in a test, check that the test fails when the constraint is
+  broken. Then delete the remaining comments. If you cannot express the content of a comment, do not
+  delete it silently. Ask the owner of negentropy.toml whether to allow it.
 unless:
   - 'https?://\S+'
   - 'SPDX-License-Identifier|Copyright \(c\)|Copyright \d{4}|Licensed under'

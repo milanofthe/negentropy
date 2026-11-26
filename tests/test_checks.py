@@ -313,3 +313,24 @@ def test_the_repository_allows_an_exception_in_its_configuration(repo):
     )
     write(repo, {"src/lib.rs": library, "negentropy.toml": "[allow]\nenvironment = [\"NO_COLOR\"]\n"})
     assert found(repo) == {("src/lib.rs", 2, "environment")}
+
+
+INTERNAL_DOCS = (
+    "enum State {\n"
+    "    /// Not decided yet.\n"
+    "    Undecided,\n"
+    "}\n"
+    "pub enum Level {\n"
+    "    /// Shown to everybody.\n"
+    "    Info,\n"
+    "}\n"
+    "thread_local! {\n"
+    "    /// The counts of this thread.\n"
+    "    static COUNTS: u32 = 0;\n"
+    "}\n"
+)
+
+
+def test_a_doc_comment_inside_a_private_enum_or_a_thread_local_is_internal(repo):
+    write(repo, {"src/lib.rs": INTERNAL_DOCS})
+    assert found(repo) == {("src/lib.rs", 2, "doc-comment"), ("src/lib.rs", 10, "doc-comment")}
