@@ -15,20 +15,13 @@ changes:
       property unless another test guards it or the removed test only pinned the implementation.
     select:
       - language: rust
+        in: [case]
         rule:
           kind: function_item
-          follows:
-            stopBy:
-              not:
-                kind: attribute_item
-            kind: attribute_item
-            regex: '^#\[(\w+::)*(test|rstest|test_case|bench)\b'
       - language: python
+        in: [case]
         rule:
           kind: function_definition
-          has:
-            field: name
-            regex: '^test_'
 
   - name: changed-bound
     compare: changed
@@ -74,20 +67,32 @@ changes:
       does today.
     select:
       - language: rust
+        in: [case]
         rule:
           kind: function_item
-          follows:
-            stopBy:
-              not:
-                kind: attribute_item
-            kind: attribute_item
-            regex: '^#\[(\w+::)*(test|rstest|test_case|bench)\b'
       - language: python
+        in: [case]
         rule:
           kind: function_definition
-          has:
-            field: name
-            regex: '^test_'
+
+  - name: similar-function
+    compare: resembles
+    similar: 0.8
+    tokens: 40
+    named: '\b(?:fn|def)\s+(\w+)'
+    message: >-
+      These functions are new since the revision, and at least 80 percent of each agrees with another
+      function of the codebase. A helper that exists is used and not written again. If the two
+      functions differ in one point, turn that point into a parameter of one function.
+    select:
+      - language: rust
+        not_in: [case]
+        rule:
+          kind: function_item
+      - language: python
+        not_in: [case]
+        rule:
+          kind: function_definition
 
   - name: suppression
     compare: more

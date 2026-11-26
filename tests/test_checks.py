@@ -1,3 +1,4 @@
+import re
 import subprocess
 
 import pytest
@@ -607,3 +608,48 @@ def test_the_changes_that_can_hide_a_problem_are_listed_for_the_owner(repo, monk
         "- allow print: ^src/log\\.rs: ",
         "- exempt: vendor/**",
     }
+
+
+ELIMINATION = (
+    "    let mut largest = 0.0;\n"
+    "    for (index, &row) in rows.iter().enumerate() {\n"
+    "        let pivot = values[index];\n"
+    "        let scaled = rhs[row] / pivot;\n"
+    "        rhs[row] = scaled;\n"
+    "        if scaled.abs() > largest {\n"
+    "            largest = scaled.abs();\n"
+    "        }\n"
+    "        for later in index + 1..rows.len() {\n"
+    "            rhs[rows[later]] -= values[later] * scaled;\n"
+    "        }\n"
+    "    }\n"
+)
+LOWER = "pub fn lower_solve(rows: &[usize], values: &[f64], rhs: &mut [f64]) -> f64 {\n" + ELIMINATION + "    largest\n}\n"
+UPPER = LOWER.replace("lower_solve", "upper_solve").replace("-=", "+=")
+
+
+def test_a_copy_with_one_difference_is_a_duplicate_unless_it_is_a_test(repo):
+    case = "#[test]\nfn lower() {\n    let (rows, values, mut rhs) = system();\n" + ELIMINATION + "    assert!(largest > 0.0);\n}\n"
+    write(repo, {
+        "src/solve.rs": LOWER + UPPER,
+        "tests/solve.rs": case + case.replace("fn lower", "fn upper").replace("-=", "+="),
+    })
+    findings = engine.findings(Codebase(repo))
+    assert [(f.path, f.line, f.check) for f in findings] == [("src/solve.rs", 16, "duplicate")]
+    assert re.fullmatch(r"9\d percent identical to src/solve\.rs:1", findings[0].detail)
+
+    short = "pub fn double(values: &mut [f64]) {\n    for value in values.iter_mut() {\n        *value *= 2.0;\n    }\n}\n"
+    write(repo, {"src/solve.rs": short + short.replace("double", "halve").replace("2.0", "0.5")})
+    assert found(repo) == set()
+
+
+def test_a_new_function_that_resembles_an_existing_one_is_listed(repo, monkeypatch, capsys):
+    write(repo, {"src/lower.rs": LOWER})
+    git(repo, "add", "-A")
+    git(repo, "commit", "-q", "-m", "Start")
+    monkeypatch.chdir(repo)
+    write(repo, {"src/upper.rs": UPPER.replace("largest", "greatest").replace("scaled.abs() >", "scaled.norm() >=")})
+    assert main(["changes", "HEAD"]) == 0
+    listed = [line for line in capsys.readouterr().out.splitlines() if line.startswith("- ")]
+    assert len(listed) == 1
+    assert re.fullmatch(r"- src/upper\.rs:1  upper_solve: [89]\d percent like lower_solve at src/lower\.rs:1", listed[0])

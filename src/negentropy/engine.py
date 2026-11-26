@@ -9,7 +9,7 @@ from negentropy.codebase import Codebase
 from negentropy.config import CONFIG_NAME, matches
 from negentropy.finding import Finding
 from negentropy.rules import Rule, Rulebook, Selector
-from negentropy.structure import significant_digits, with_renamed_variables
+from negentropy.structure import resemblances, significant_digits, with_renamed_variables
 from negentropy.syntax import Match, parse
 
 
@@ -126,6 +126,20 @@ class Engine:
                 yield Finding(rule.name, match.path, match.lines[0], detail, self.reason(rule, match))
             else:
                 first[shape] = match
+        if not rule.similar:
+            return
+        long = [
+            (match, shape)
+            for shape, match in first.items()
+            if len(shape) >= rule.similar_tokens and not any(self.inside(name, match) for name in rule.similar_outside)
+        ]
+        nearest: dict[int, tuple[float, int]] = {}
+        for (one, other), ratio in resemblances([shape for _, shape in long], rule.similar).items():
+            nearest[other] = max(nearest.get(other, (0.0, one)), (ratio, one))
+        for other, (ratio, one) in sorted(nearest.items()):
+            match, original = long[other][0], long[one][0]
+            detail = f"{int(100 * ratio)} percent identical to {original.path}:{original.lines[0]}"
+            yield Finding(rule.name, match.path, match.lines[0], detail, self.reason(rule, match))
 
     def unmatched(self, rule: Rule) -> Iterator[Finding]:
         lines = self.codebase.texts.get(CONFIG_NAME, [])
