@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 import yaml
@@ -15,7 +15,9 @@ SELECTOR_KEYS = {
     "matches", "unless", "in", "not_in", "detail", "digits_over", "digits_up_to",
 }
 SHARED_KEYS = {"matches", "unless", "in", "not_in", "detail", "digits_over", "digits_up_to"}
-RULE_KEYS = SHARED_KEYS | {"name", "message", "kind", "subject", "select", "counts", "tokens", "unless_subject"}
+RULE_KEYS = SHARED_KEYS | {
+    "name", "message", "cleanup", "phase", "kind", "subject", "select", "counts", "tokens", "unless_subject",
+}
 KINDS = {"each", "unique", "count"}
 
 
@@ -87,6 +89,8 @@ class Rule:
     counts: dict[str, tuple[Selector, ...]] = field(default_factory=dict)
     tokens: int = 0
     unless_subject: re.Pattern | None = None
+    cleanup: str = ""
+    phase: str = ""
 
     @classmethod
     def load(cls, path: Path) -> Rule:
@@ -107,6 +111,8 @@ class Rule:
             counts={name: selectors(entry, source) for name, entry in raw.get("counts", {}).items()},
             tokens=raw.get("tokens", 0),
             unless_subject=re.compile(raw["unless_subject"]) if "unless_subject" in raw else None,
+            cleanup=raw.get("cleanup", ""),
+            phase=raw.get("phase", ""),
         )
 
     @property
@@ -121,18 +127,37 @@ class Scope:
     everywhere: bool = False
 
 
+@dataclass(frozen=True)
+class Phase:
+    name: str
+    reason: str
+
+
 @dataclass(frozen=True, eq=False)
 class Rulebook:
     rules: tuple[Rule, ...]
+    phases: tuple[Phase, ...]
     scopes: dict[str, Scope]
     languages: dict[str, list[str]]
 
     @classmethod
     def load(cls, root: Path, config: Config) -> Rulebook:
         base = yaml.safe_load((PACKAGE / "base.yml").read_text(encoding="utf-8"))
-        rules = [Rule.load(PACKAGE / "checks" / f"{name}.yml") for name in base["checks"]]
+        phases = tuple(Phase(entry["name"], entry["reason"]) for entry in base["phases"])
+        rules = [
+            replace(Rule.load(PACKAGE / "checks" / f"{name}.yml"), phase=entry["name"])
+            for entry in base["phases"]
+            for name in entry["checks"]
+        ]
         for directory in config.rules:
-            rules += [Rule.load(path) for path in sorted((root / directory).glob("*.yml"))]
+            for path in sorted((root / directory).glob("*.yml")):
+                own = Rule.load(path)
+                rules.append(replace(own, phase=own.phase or base["own_phase"]))
+        order = [phase.name for phase in phases]
+        misplaced = sorted(rule.name for rule in rules if rule.phase not in order)
+        if misplaced:
+            raise ToolError(f"the checks {misplaced} name a phase that does not exist; the phases are {order}")
+        rules.sort(key=lambda rule: order.index(rule.phase))
         names = [rule.name for rule in rules]
         unknown = set(config.off) - set(names)
         if unknown or len(names) != len(set(names)):
@@ -147,7 +172,7 @@ class Rulebook:
                 selectors=selectors(raw, f"scope {name}"),
                 everywhere="config" in raw and paths is None,
             )
-        book = cls(tuple(rule for rule in rules if rule.name not in config.off), scopes, base["languages"])
+        book = cls(tuple(rule for rule in rules if rule.name not in config.off), phases, scopes, base["languages"])
         for rule in book.rules:
             for selector in rule.all_selectors:
                 missing = set(selector.within + selector.outside) - set(scopes)

@@ -2,6 +2,8 @@ name: dead-code
 message: >-
   This attribute allows dead or unused code. Delete the unused code instead, because version control
   keeps the old version. Old code that stays next to its replacement gets copied into new code.
+cleanup: >-
+  Delete the item that the attribute covers, and then delete everything that only this item used.
 not_in: [test]
 select:
   - language: rust

@@ -3,6 +3,9 @@ message: >-
   This doc comment does not document the public API. Doc comments are allowed only on exported items
   inside the paths that negentropy.toml lists under `public`. Delete the doc comment. If the item
   needs an explanation, rename or restructure it.
+cleanup: >-
+  Decide first which paths are the public API and list them under `public` in negentropy.toml. Then
+  delete the doc comments outside those paths and on internal items.
 select:
   - language: rust
     detail: the item is internal

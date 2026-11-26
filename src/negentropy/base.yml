@@ -1,20 +1,26 @@
-checks:
-  - comment
-  - doc-comment
-  - markdown
-  - characters
-  - literal
-  - test-bound
-  - pinned-value
-  - snapshot
-  - unwrap
-  - print
-  - environment
-  - dead-code
-  - duplicate
-  - budget
-  - commit-message
-  - attribution
+phases:
+  - name: remove
+    reason: Start with what can be removed completely, because removed code needs no other fix.
+    checks: [markdown, snapshot, dead-code]
+  - name: merge
+    reason: Merge copies next, because each merged copy takes its comments, numbers and test bounds with it.
+    checks: [duplicate]
+  - name: restructure
+    reason: These findings change signatures and error paths, which should be settled before the detailed work.
+    checks: [environment, unwrap, print]
+  - name: name
+    reason: Name the numbers once the code has its final form.
+    checks: [literal, test-bound, pinned-value]
+  - name: text
+    reason: Clean up comments and characters last, because they describe code that the earlier phases change.
+    checks: [doc-comment, comment, characters]
+  - name: count
+    reason: Declare the counts at the end, when the earlier phases have settled them.
+    checks: [budget]
+  - name: history
+    reason: These findings concern commit messages and pull requests, not the codebase.
+    checks: [commit-message, attribution]
+own_phase: restructure
 
 languages:
   html: ["*.svelte"]

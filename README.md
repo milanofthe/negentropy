@@ -14,6 +14,10 @@ in a YAML file, which also contains the message that explains how to fix a findi
 checks are in [src/negentropy/checks](src/negentropy/checks). A repository can add its own checks in
 the same format.
 
+The report lists the findings in the order in which they are best fixed, in phases from removing
+code to cleaning up comments. For a codebase with many findings, `negentropy next` shows only the
+phase to fix next.
+
 negentropy reads its configuration from `negentropy.toml` at the root of the repository. All keys are
 optional.
 
@@ -34,7 +38,7 @@ features = 3
 
 negentropy can run in three places:
 
-- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.0.0` after a checkout with
+- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.1.0` after a checkout with
   `fetch-depth: 0`.
 - At every commit: run `git config --global core.hooksPath <clone>/hooks` once per machine.
 - After every edit by a coding agent: register `sh <clone>/hooks/agent` as a hook of the agent.

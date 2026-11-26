@@ -2,6 +2,10 @@ name: unwrap
 message: >-
   This library code calls `unwrap` or `expect`, which panics on a path that the caller cannot handle.
   Return the error instead, or change the types so that the failing state cannot occur.
+cleanup: >-
+  Start with the functions that already return a Result, where the error can be passed on with `?`.
+  For the other functions, decide whether the failure is an error for the caller or a state that the
+  types should exclude.
 in: [library]
 not_in: [test]
 select:

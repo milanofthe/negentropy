@@ -1,5 +1,8 @@
 name: duplicate
 kind: unique
+cleanup: >-
+  Start with the function that has the most copies. Move it to a module that all callers can reach,
+  and replace the copies with calls.
 tokens: 25
 message: >-
   This function is identical to another function except for the names of its variables. Keep one of

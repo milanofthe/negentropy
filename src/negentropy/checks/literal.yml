@@ -3,6 +3,9 @@ message: >-
   This number in library code is a tolerance or a threshold without a name. Define it as a named
   constant in the constants module, state there how the value was derived or measured, and use the
   name here.
+cleanup: >-
+  Group the numbers by their meaning before you name them, so that one tolerance gets one constant
+  even if it appears in several places.
 matches: '[eE]-\d'
 in: [library]
 not_in: [test, constants]
