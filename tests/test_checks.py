@@ -238,23 +238,6 @@ def test_library_code_reads_no_environment_and_keeps_no_dead_code(repo):
     }
 
 
-def test_a_count_is_the_one_the_repository_declares(repo):
-    files = {
-        "src/constants.rs": "pub const A: f64 = 1.0;\npub const B: f64 = 2.0;\nstatic C: u32 = 3;\n",
-        "src/constants.py": "TOL = 1.0\nlower = 2\n",
-        "src/lib.rs": "const ELSEWHERE: u32 = 1;\n",
-        "Cargo.toml": "[features]\ndefault = [\"fast\"]\nfast = []\nslow = []\n",
-    }
-    write(repo, {**files, "negentropy.toml": "[budget]\nconstants = 4\nfeatures = 2\n"})
-    assert found(repo) == set()
-    write(repo, {"negentropy.toml": "[budget]\nconstants = 3\nfeatures = 3\n"})
-    findings = engine.findings(Codebase(repo))
-    assert {(f.path, f.line, f.detail) for f in findings} == {
-        ("negentropy.toml", 2, "constants: 4 in the codebase, 3 declared"),
-        ("negentropy.toml", 3, "features: 2 in the codebase, 3 declared"),
-    }
-
-
 NORM = (
     "pub fn norm(values: &[f64]) -> f64 {\n"
     "    let mut sum = 0.0;\n"

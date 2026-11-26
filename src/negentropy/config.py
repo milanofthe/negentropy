@@ -33,7 +33,6 @@ class Config:
     rules: tuple[str, ...] = ()
     off: tuple[str, ...] = ()
     characters: str = ""
-    budget: dict[str, int] = field(default_factory=dict)
     allow: dict[str, list[str]] = field(default_factory=dict)
     reported: tuple[dict[str, str], ...] = ()
 

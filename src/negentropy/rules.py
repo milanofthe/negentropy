@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from dataclasses import dataclass, field, replace
+from dataclasses import dataclass, replace
 from pathlib import Path
 
 import yaml
@@ -11,14 +11,14 @@ from negentropy.finding import ToolError
 
 PACKAGE = Path(__file__).resolve().parent
 SELECTOR_KEYS = {
-    "language", "rule", "line", "file", "keys", "files", "allow", "names", "after_subject",
+    "language", "rule", "line", "file", "files", "allow", "names", "after_subject",
     "matches", "unless", "in", "not_in", "detail", "digits_over", "digits_up_to",
 }
 SHARED_KEYS = {"matches", "unless", "in", "not_in", "detail", "digits_over", "digits_up_to"}
 RULE_KEYS = SHARED_KEYS | {
-    "name", "message", "cleanup", "phase", "kind", "subject", "select", "counts", "tokens", "unless_subject",
+    "name", "message", "cleanup", "phase", "kind", "subject", "select", "tokens", "unless_subject",
 }
-KINDS = {"each", "unique", "count", "unmatched"}
+KINDS = {"each", "unique", "unmatched"}
 
 
 def listed(value) -> tuple:
@@ -33,7 +33,6 @@ class Selector:
     rule: dict | None = None
     line: re.Pattern | None = None
     file: tuple[str, ...] = ()
-    keys: str | None = None
     files: tuple[str, ...] = ()
     allow: str | None = None
     names: bool = False
@@ -51,15 +50,14 @@ class Selector:
         unknown = set(raw) - SELECTOR_KEYS
         if unknown:
             raise ToolError(f"{source}: a selector has unknown keys {sorted(unknown)}")
-        if sum(key in raw for key in ("rule", "line", "file", "keys")) != 1:
-            raise ToolError(f"{source}: a selector must have exactly one of the keys rule, line, file and keys")
+        if sum(key in raw for key in ("rule", "line", "file")) != 1:
+            raise ToolError(f"{source}: a selector must have exactly one of the keys rule, line and file")
         merged = {**shared, **raw}
         return cls(
             languages=listed(raw.get("language")),
             rule=raw.get("rule"),
             line=re.compile(raw["line"]) if "line" in raw else None,
             file=listed(raw.get("file")),
-            keys=raw.get("keys"),
             files=listed(raw.get("files")),
             allow=raw.get("allow"),
             names=bool(raw.get("names")),
@@ -86,7 +84,6 @@ class Rule:
     kind: str = "each"
     subjects: tuple[str, ...] = ("codebase",)
     selectors: tuple[Selector, ...] = ()
-    counts: dict[str, tuple[Selector, ...]] = field(default_factory=dict)
     tokens: int = 0
     unless_subject: re.Pattern | None = None
     cleanup: str = ""
@@ -108,17 +105,11 @@ class Rule:
             kind=kind,
             subjects=listed(raw.get("subject", "codebase")),
             selectors=selectors(raw, source),
-            counts={name: selectors(entry, source) for name, entry in raw.get("counts", {}).items()},
             tokens=raw.get("tokens", 0),
             unless_subject=re.compile(raw["unless_subject"]) if "unless_subject" in raw else None,
             cleanup=raw.get("cleanup", ""),
             phase=raw.get("phase", ""),
         )
-
-    @property
-    def all_selectors(self) -> tuple[Selector, ...]:
-        return self.selectors + tuple(entry for group in self.counts.values() for entry in group)
-
 
 @dataclass(frozen=True, eq=False)
 class Scope:
@@ -177,7 +168,7 @@ class Rulebook:
             )
         book = cls(tuple(rule for rule in rules if rule.name not in config.off), phases, scopes, base["languages"], base["terms"], base["reported"])
         for rule in book.rules:
-            for selector in rule.all_selectors:
+            for selector in rule.selectors:
                 missing = set(selector.within + selector.outside) - set(scopes)
                 if missing:
                     raise ToolError(f"{rule.name}: unknown scopes {sorted(missing)}; the existing scopes are {sorted(scopes)}")
