@@ -1,0 +1,15 @@
+name: literal
+message: >-
+  A tolerance or a threshold written as a number in library code. It has a name in the constants module,
+  next to where it comes from: a derivation, a measurement, a reference's stated error.
+  Move it there and use the name.
+matches: '[eE]-\d'
+in: [library]
+not_in: [test, constants]
+select:
+  - language: rust
+    rule:
+      kind: float_literal
+  - language: python
+    rule:
+      kind: float

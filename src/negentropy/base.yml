@@ -1,0 +1,93 @@
+checks:
+  - comment
+  - doc-comment
+  - markdown
+  - characters
+  - literal
+  - test-bound
+  - pinned-value
+  - snapshot
+  - unwrap
+  - print
+  - environment
+  - dead-code
+  - duplicate
+  - budget
+  - commit-message
+  - attribution
+
+languages:
+  html: ["*.svelte"]
+
+scopes:
+  test:
+    paths:
+      - "**/tests/**"
+      - "**/benches/**"
+      - "**/examples/**"
+      - "**/tests.rs"
+      - "**/test_*.py"
+      - "**/*_test.py"
+      - "**/conftest.py"
+      - "**/*.test.ts"
+      - "**/*.test.js"
+      - "**/*.spec.ts"
+      - "**/*.spec.js"
+      - "**/*.test.tsx"
+      - "**/*.test.jsx"
+      - "**/*.spec.tsx"
+      - "**/*.spec.jsx"
+    select:
+      - language: rust
+        rule:
+          kind: mod_item
+          follows:
+            stopBy:
+              not:
+                kind: attribute_item
+            kind: attribute_item
+            regex: 'cfg\(test\)'
+  assertion:
+    select:
+      - language: rust
+        rule:
+          kind: macro_invocation
+          has:
+            field: macro
+            regex: '^(debug_)?assert'
+      - language: python
+        rule:
+          any:
+            - kind: assert_statement
+            - kind: call
+              has:
+                field: function
+                regex: '(^|\.)(approx|isclose|allclose|assert_allclose|assert_almost_equal|assert_array_almost_equal)$'
+  binary:
+    paths: ["**/main.rs", "**/bin/**", "**/build.rs", "**/cli.rs", "**/cli/**"]
+  manifest:
+    paths: ["**/Cargo.toml", "**/pyproject.toml", "**/requirements*.txt", "**/package.json"]
+  readme:
+    paths:
+      - "**/README*.md"
+      - "**/Readme*.md"
+      - "**/readme*.md"
+      - "**/CLAUDE.md"
+      - "**/AGENTS.md"
+      - "**/SKILL.md"
+      - "**/LICENSE.md"
+      - "**/NOTICE.md"
+      - "**/CHANGELOG.md"
+      - ".github/**"
+      - ".claude/**"
+  library:
+    config: library
+    default: ["**/src/**"]
+  constants:
+    config: constants
+    default: ["**/constants.rs", "**/constants/**", "**/constants.py"]
+  public:
+    config: public
+  content:
+    config: markdown
+    default: []

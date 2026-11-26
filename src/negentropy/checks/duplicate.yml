@@ -1,0 +1,17 @@
+name: duplicate
+kind: unique
+tokens: 25
+message: >-
+  A function that is another one with its variables renamed. Keep one and call it from both places;
+  if the copies should differ, the difference is a parameter. Before writing a helper, search for the
+  one that exists.
+select:
+  - language: rust
+    rule:
+      kind: function_item
+      has:
+        field: body
+        kind: block
+  - language: python
+    rule:
+      kind: function_definition

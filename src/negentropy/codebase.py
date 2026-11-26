@@ -4,9 +4,8 @@ import subprocess
 from functools import cached_property
 from pathlib import Path
 
-from negentropy.config import TEST_PATHS, Config, matches
+from negentropy.config import Config, matches
 from negentropy.finding import ToolError
-from negentropy.syntax import Match, Syntax
 
 
 def git(root: Path, *args: str) -> str:
@@ -43,13 +42,3 @@ class Codebase:
             except UnicodeDecodeError:
                 continue
         return texts
-
-    @cached_property
-    def syntax(self) -> Syntax:
-        return Syntax.of(self.root, self.files)
-
-    def in_test(self, match: Match) -> bool:
-        return matches(match.path, TEST_PATHS) or self.syntax.within("test", match)
-
-    def in_library(self, match: Match) -> bool:
-        return matches(match.path, self.config.library) and not self.in_test(match)

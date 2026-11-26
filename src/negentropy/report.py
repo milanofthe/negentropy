@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from negentropy.finding import Check, Finding
+from negentropy.finding import Finding
+from negentropy.rules import Rule
 
 
 def items(findings: list[Finding]) -> list[str]:
@@ -20,14 +21,14 @@ def items(findings: list[Finding]) -> list[str]:
     return lines
 
 
-def render(findings: list[Finding], checks: list[Check]) -> str:
-    sections = [(check, items([f for f in findings if f.check == check.name])) for check in checks]
-    sections = [(check, listed) for check, listed in sections if listed]
+def render(findings: list[Finding], rules: tuple[Rule, ...]) -> str:
+    sections = [(rule, items([f for f in findings if f.check == rule.name])) for rule in rules]
+    sections = [(rule, listed) for rule, listed in sections if listed]
     if not sections:
         return "negentropy: clean"
     total = sum(len(listed) for _, listed in sections)
-    counts = ", ".join(f"{check.name} {len(listed)}" for check, listed in sections)
-    blocks = [f"negentropy: {total} to fix ({counts})"]
-    for check, listed in sections:
-        blocks.append("\n".join([f"## {check.name} ({len(listed)})", check.message, "", *listed]))
+    counts = ", ".join(f"{rule.name} {len(listed)}" for rule, listed in sections)
+    blocks = [f"negentropy: {total} findings ({counts})"]
+    for rule, listed in sections:
+        blocks.append("\n".join([f"## {rule.name} ({len(listed)})", rule.message, "", *listed]))
     return "\n\n".join(blocks)

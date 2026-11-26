@@ -1,0 +1,17 @@
+name: environment
+message: >-
+  An environment variable read in library code: a switch no caller sees and no test sets.
+  Take the value as an option of the API, and let the binary read the environment.
+in: [library]
+not_in: [test, binary]
+select:
+  - language: rust
+    rule:
+      kind: scoped_identifier
+      regex: '(^|::)env::(var|var_os|vars|vars_os)$'
+      inside:
+        kind: call_expression
+  - language: python
+    rule:
+      kind: attribute
+      regex: '^os\.(environ|getenv)$'

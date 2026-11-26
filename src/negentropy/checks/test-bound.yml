@@ -1,0 +1,16 @@
+name: test-bound
+message: >-
+  A test bound written as a number. A bound comes from the reference's own error or from a derivation
+  (conditioning, discretisation order, machine epsilon) and has a name in the constants module that says
+  which. A bound chosen so that the test passes pins what the code does today.
+matches: '[eE]-\d'
+digits_up_to: 7
+in: [test, assertion]
+not_in: [constants]
+select:
+  - language: rust
+    rule:
+      kind: float_literal
+  - language: python
+    rule:
+      kind: float

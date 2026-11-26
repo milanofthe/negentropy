@@ -1,0 +1,10 @@
+name: commit-message
+subject: [commit]
+unless_subject: '^Merge '
+message: >-
+  A commit message with more than one line. One short line says what changed;
+  the reasons and the details belong to the pull request or the issue.
+select:
+  - line: '\S'
+    after_subject: true
+    unless: ['^This reverts commit [0-9a-f]+\.$']

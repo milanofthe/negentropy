@@ -9,7 +9,7 @@ description = "Checks that keep a codebase from decaying while agents and people
 readme = "README.md"
 license = "MIT"
 requires-python = ">=3.11"
-dependencies = ["ast-grep-cli==0.51.3"]
+dependencies = ["ast-grep-cli==0.51.3", "pyyaml>=6"]
 
 [project.scripts]
 negentropy = "negentropy.cli:main"

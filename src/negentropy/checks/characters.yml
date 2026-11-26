@@ -1,0 +1,10 @@
+name: characters
+subject: [codebase, commit, text]
+message: >-
+  A character outside ASCII. Typographic characters (dashes, curly quotes, arrows, non-breaking spaces)
+  are written with their ASCII form. The letters a project writes in are listed in negentropy.toml
+  (`characters`).
+select:
+  - line: '[^\t\x20-\x7e]'
+    allow: characters
+    names: true

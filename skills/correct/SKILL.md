@@ -31,11 +31,12 @@ A fix at one level is not repeated at a lower one.
    check will be wrong half of the time: go back to the levels above.
 3. Run the candidate over the codebases it will guard and read what it hits. Keep it only if what it
    hits is the mistake.
-4. Write the module in `src/negentropy/checks`: the name, the message, the function. The message
-   says what is wrong, why, and what to do instead, in that order. For a structural check, add the
-   ast-grep rule in `src/negentropy/rules`.
-5. Write the test in `tests` from the two real instances, and one case that must pass.
-6. Add the row to the table in the README.
+4. Write the check as one YAML file: the name, the message, the selectors. The message says what is
+   wrong, why, and what to do instead, in that order. A check that holds for every codebase goes to
+   `src/negentropy/checks` and into the list in `base.yml`; one that holds for this repository goes to
+   the directory `negentropy.toml` lists under `rules`.
+5. Write the test from the two real instances, and one case that must pass.
+6. For a built-in check, add the row to the table in the README.
 
 ## Report
 
