@@ -36,7 +36,6 @@ A fix at one level is not repeated at a lower one.
    `src/negentropy/checks` and into the list in `base.yml`; one that holds for this repository goes to
    the directory `negentropy.toml` lists under `rules`.
 5. Write the test from the two real instances, and one case that must pass.
-6. For a built-in check, add the row to the table in the README.
 
 ## Report
 
