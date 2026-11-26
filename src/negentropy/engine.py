@@ -88,10 +88,19 @@ class Engine:
             ):
                 yield match
 
+    def allowed(self, rule: Rule, match: Match) -> bool:
+        patterns = self.codebase.config.allow.get(rule.name, ())
+        lines = self.codebase.texts.get(match.path, [])
+        source = lines[match.lines[0] - 1] if match.lines[0] <= len(lines) else ""
+        return any(re.search(pattern, f"{match.path}: {source}") for pattern in patterns)
+
+    def reported(self, rule: Rule, selector: Selector) -> Iterator[Match]:
+        return (match for match in self.selected(selector) if not self.allowed(rule, match))
+
     def each(self, rule: Rule) -> Iterator[Finding]:
         seen = set()
         for selector in rule.selectors:
-            for match in self.selected(selector):
+            for match in self.reported(rule, selector):
                 detail = names_of(selector, match.text) if selector.names else selector.detail
                 for line in match.lines:
                     if (match.path, line) not in seen:
@@ -99,7 +108,7 @@ class Engine:
                         yield Finding(rule.name, match.path, line, detail)
 
     def unique(self, rule: Rule) -> Iterator[Finding]:
-        found = [match for selector in rule.selectors for match in self.selected(selector)]
+        found = [match for selector in rule.selectors for match in self.reported(rule, selector)]
         first: dict[tuple[str, ...], Match] = {}
         for match in sorted(found, key=lambda match: (match.path, match.lines[0])):
             shape = with_renamed_variables(match.text)

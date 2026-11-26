@@ -304,3 +304,12 @@ def test_a_repository_adds_a_check_of_its_own_as_a_file(repo):
                  "web/App.tsx": "export function App() {\n  useEffect(() => {}, []);\n  return null;\n}\n",
                  "web/App.test.tsx": "useEffect(() => {}, []);\n"})
     assert found(repo) == {("web/App.tsx", 2, "no-effect")}
+
+
+def test_the_repository_allows_an_exception_in_its_configuration(repo):
+    library = (
+        "pub fn color() -> bool { std::env::var_os(\"NO_COLOR\").is_none() }\n"
+        "pub fn mode() -> bool { std::env::var_os(\"SOLVER_MODE\").is_some() }\n"
+    )
+    write(repo, {"src/lib.rs": library, "negentropy.toml": "[allow]\nenvironment = [\"NO_COLOR\"]\n"})
+    assert found(repo) == {("src/lib.rs", 2, "environment")}

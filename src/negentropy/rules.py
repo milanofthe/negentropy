@@ -159,9 +159,9 @@ class Rulebook:
             raise ToolError(f"the checks {misplaced} name a phase that does not exist; the phases are {order}")
         rules.sort(key=lambda rule: order.index(rule.phase))
         names = [rule.name for rule in rules]
-        unknown = set(config.off) - set(names)
+        unknown = (set(config.off) | set(config.allow)) - set(names)
         if unknown or len(names) != len(set(names)):
-            raise ToolError(f"check names must be unique, and `off` may only list existing checks; unknown: {sorted(unknown)}")
+            raise ToolError(f"check names must be unique, and `off` and `allow` may only name existing checks; unknown: {sorted(unknown)}")
         scopes = {}
         for name, raw in base["scopes"].items():
             configured = getattr(config, raw["config"]) if "config" in raw else None
