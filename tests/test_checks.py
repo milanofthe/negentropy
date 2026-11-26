@@ -503,3 +503,33 @@ def test_two_stubs_with_one_signature_are_not_a_duplicate(repo):
         "    def solve(self, b: object, transpose: bool = False, conjugate: bool = False) -> object: ...\n"
     )})
     assert found(repo) == set()
+
+
+def test_a_thin_forwarder_is_no_duplicate_and_a_gated_test_module_is_test_code(repo):
+    write(repo, {"src/solvers.rs": (
+        "struct Lu { works: usize }\n"
+        "struct Ldlt { works: usize }\n"
+        "impl Lu {\n"
+        "    fn works(&self, first: usize, second: usize, third: usize, fourth: usize) -> usize { self.count(first, second, third, fourth) }\n"
+        "    fn count(&self, first: usize, second: usize, third: usize, fourth: usize) -> usize {\n"
+        "        let total = first + second + third + fourth;\n"
+        "        total + self.works\n"
+        "    }\n"
+        "}\n"
+        "impl Ldlt {\n"
+        "    fn works(&self, first: usize, second: usize, third: usize, fourth: usize) -> usize { self.count(first, second, third, fourth) }\n"
+        "    fn count(&self, first: usize, second: usize, third: usize, fourth: usize) -> usize {\n"
+        "        let total = first + second + third + fourth;\n"
+        "        total + self.works\n"
+        "    }\n"
+        "}\n"
+        "#[cfg(all(test, feature = \"matgen\"))]\n"
+        "mod generated {\n"
+        "    #[test]\n"
+        "    fn the_factor_solves() { assert!((Some(1.0f64).unwrap() - 1.0).abs() < 1e-13); }\n"
+        "}\n"
+    )})
+    assert found(repo) == {
+        ("src/solvers.rs", 12, "duplicate"),
+        ("src/solvers.rs", 20, "test-bound"),
+    }

@@ -8,7 +8,8 @@ message: >-
   This function is identical to another function except for the names of its variables. Keep one of
   the two functions and call it from both places. If the two copies need to differ, turn the
   difference into a parameter. Search the codebase for an existing function before you write a new
-  helper.
+  helper. A function whose body is one call, one field or one reference is not reported, because
+  a thin forwarder repeats no logic.
 select:
   - language: rust
     rule:
@@ -16,6 +17,21 @@ select:
       has:
         field: body
         kind: block
+      not:
+        has:
+          field: body
+          kind: block
+          has:
+            nthChild: 1
+            any:
+              - kind: call_expression
+              - kind: field_expression
+              - kind: reference_expression
+              - kind: try_expression
+              - kind: identifier
+          not:
+            has:
+              nthChild: 2
   - language: python
     rule:
       kind: function_definition
