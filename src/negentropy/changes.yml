@@ -136,5 +136,5 @@ changes:
   - name: exception
     compare: config
     message: >-
-      These exceptions in negentropy.toml are new or wider than at the revision. Entries under `allow`,
-      `exempt`, `off` and `budget` are the decision of the owner of the repository.
+      These exceptions in negentropy.toml are new since the revision. Entries under `allow`, `exempt` and
+      `off` are the decision of the owner of the repository.

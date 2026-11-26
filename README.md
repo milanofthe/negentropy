@@ -35,10 +35,6 @@ rules = ["tools/checks"]
 off = ["attribution"]
 characters = "\u00e4\u00f6\u00fc\u00df"
 
-[budget]
-constants = 40
-features = 3
-
 [allow]
 environment = ["NO_COLOR"]
 
@@ -68,7 +64,7 @@ where each of these changes needs a reason.
 
 negentropy runs in two places. It installs no hooks and never runs by itself.
 
-- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.11.0` after a checkout with
+- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.12.0` after a checkout with
   `fetch-depth: 0`. The step writes the report and the list of `negentropy changes` to the summary of
   the run.
 - By hand in a checkout: `negentropy check` reports the whole codebase. `negentropy check --against

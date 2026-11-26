@@ -170,11 +170,6 @@ def config(change: Change, before: Side, now: Side) -> list[str]:
     ]
     listed += [f"- exempt: {glob}" for glob in new.exempt if glob not in old.exempt]
     listed += [f"- off: {check}" for check in new.off if check not in old.off]
-    listed += [
-        f"- budget {name}: {old.budget[name]} -> {count}"
-        for name, count in sorted(new.budget.items())
-        if name in old.budget and count > old.budget[name]
-    ]
     return listed
 
 

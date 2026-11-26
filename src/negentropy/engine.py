@@ -1,14 +1,13 @@
 from __future__ import annotations
 
 import re
-import tomllib
 import unicodedata
 from functools import cached_property
 from typing import Iterator
 
 from negentropy.codebase import Codebase
 from negentropy.config import CONFIG_NAME, matches
-from negentropy.finding import Finding, ToolError
+from negentropy.finding import Finding
 from negentropy.rules import Rule, Rulebook, Selector
 from negentropy.structure import significant_digits, with_renamed_variables
 from negentropy.syntax import Match, parse
@@ -31,7 +30,7 @@ class Engine:
 
     @cached_property
     def parsed(self) -> dict[Selector, list[Match]]:
-        of_rules = [selector for rule in self.book.about("codebase") for selector in rule.all_selectors]
+        of_rules = [selector for rule in self.book.about("codebase") for selector in rule.selectors]
         of_scopes = [selector for scope in self.book.scopes.values() for selector in scope.selectors]
         syntactic = [selector for selector in of_rules + of_scopes if selector.rule is not None]
         return parse(self.codebase.root, self.codebase.files, syntactic, self.book.languages)
@@ -58,11 +57,6 @@ class Engine:
             yield from self.parsed[selector]
         elif selector.file:
             yield from (Match(path, (1,), path) for path in files if matches(path, selector.file))
-        elif selector.keys is not None:
-            for path in files:
-                if matches(path, selector.files):
-                    table = tomllib.loads((self.codebase.root / path).read_text(encoding="utf-8"))
-                    yield from (Match(path, (1,), key) for key in table.get(selector.keys, {}))
         else:
             allowed = getattr(self.codebase.config, selector.allow) if selector.allow else ""
             for path, lines in self.codebase.texts.items():
@@ -133,16 +127,6 @@ class Engine:
             else:
                 first[shape] = match
 
-    def count(self, rule: Rule) -> Iterator[Finding]:
-        lines = self.codebase.texts.get(CONFIG_NAME, [])
-        for name, declared in self.codebase.config.budget.items():
-            if name not in rule.counts:
-                continue
-            counted = sum(1 for selector in rule.counts[name] for _ in self.selected(selector))
-            if counted != declared:
-                line = next((n for n, text in enumerate(lines, start=1) if re.match(rf"\s*{name}\s*=", text)), 1)
-                yield Finding(rule.name, CONFIG_NAME, line, f"{name}: {counted} in the codebase, {declared} declared")
-
     def unmatched(self, rule: Rule) -> Iterator[Finding]:
         lines = self.codebase.texts.get(CONFIG_NAME, [])
         headers = [n for n, text in enumerate(lines, start=1) if re.match(r"\s*\[\[reported\]\]", text)]
@@ -153,11 +137,7 @@ class Engine:
 
     def findings(self) -> list[Finding]:
         rules = self.book.about("codebase")
-        countable = {name for rule in rules for name in rule.counts}
-        unknown = set(self.codebase.config.budget) - countable
-        if unknown:
-            raise ToolError(f"{CONFIG_NAME}: `budget` can only count {sorted(countable)}; unknown: {sorted(unknown)}")
-        kinds = {"each": self.each, "unique": self.unique, "count": self.count}
+        kinds = {"each": self.each, "unique": self.unique}
         found = [finding for rule in rules if rule.kind in kinds for finding in kinds[rule.kind](rule)]
         return found + [finding for rule in rules if rule.kind == "unmatched" for finding in self.unmatched(rule)]
 
