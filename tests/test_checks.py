@@ -391,3 +391,33 @@ def test_a_commit_may_keep_the_findings_of_its_parent_but_not_add_one(repo, monk
     write(repo, {"a.py": "x = 1\n", "b.py": "y = 2\n"})
     assert main(["check", "--against", "HEAD"]) == 0
     assert capsys.readouterr().out == "negentropy: clean\n"
+
+
+def test_a_panic_on_a_missing_value_is_an_unwrap_in_another_form(repo):
+    write(repo, {"src/lib.rs": (
+        "enum Shape { Round, Square }\n"
+        "fn first(values: &[u8], found: Option<u8>, parsed: Result<u8, String>, shape: Shape) -> u8 {\n"
+        "    let a = match found {\n"
+        "        Some(value) => value,\n"
+        "        None => unreachable!(\"every item is mapped\"),\n"
+        "    };\n"
+        "    let b = match parsed {\n"
+        "        Ok(value) => value,\n"
+        "        Err(error) => panic!(\"invalid: {error}\"),\n"
+        "    };\n"
+        "    let c = values.first().copied().unwrap_or_else(|| unreachable!(\"not empty\"));\n"
+        "    let d = match shape {\n"
+        "        Shape::Round => 1,\n"
+        "        Shape::Square => unreachable!(\"squares are lowered before\"),\n"
+        "    };\n"
+        "    let Some(e) = found else { unreachable!() };\n"
+        "    assert!(a > 0);\n"
+        "    a + b + c + d + e\n"
+        "}\n"
+    )})
+    assert found(repo) == {
+        ("src/lib.rs", 5, "unwrap"),
+        ("src/lib.rs", 9, "unwrap"),
+        ("src/lib.rs", 11, "unwrap"),
+        ("src/lib.rs", 16, "unwrap"),
+    }
