@@ -7,11 +7,12 @@ intro: >-
 changes:
   - name: removed-test
     compare: gone
+    similar: 0.5
     named: '\b(?:fn|def)\s+(\w+)'
     message: >-
-      These tests existed at the revision and exist no longer, and no test with the same body exists
-      under another name. A removed test no longer guards its property. Keep a test of the property
-      unless another test guards it or the removed test only pinned the implementation.
+      These tests existed at the revision and exist no longer, and no new test has a body of which at
+      least half agrees with theirs. A removed test no longer guards its property. Keep a test of the
+      property unless another test guards it or the removed test only pinned the implementation.
     select:
       - language: rust
         rule:

@@ -4,6 +4,7 @@ import re
 import tempfile
 from collections import Counter
 from dataclasses import dataclass, replace
+from difflib import SequenceMatcher
 from pathlib import Path
 
 import yaml
@@ -17,7 +18,7 @@ from negentropy.structure import with_renamed_variables
 from negentropy.syntax import Match
 
 SHOWN_CHARACTERS = 100
-CHANGE_KEYS = {"name", "compare", "message", "select", "named", "value", "through", "lines"}
+CHANGE_KEYS = {"name", "compare", "message", "select", "named", "value", "through", "lines", "similar"}
 WORD = re.compile(r"\b[A-Za-z_]\w*\b")
 
 
@@ -31,6 +32,7 @@ class Change:
     value: re.Pattern | None = None
     through: str = ""
     lines: bool = False
+    similar: float = 1.0
 
     @classmethod
     def of(cls, raw: dict) -> Change:
@@ -46,6 +48,7 @@ class Change:
             value=re.compile(raw["value"]) if "value" in raw else None,
             through=raw.get("through", ""),
             lines=bool(raw.get("lines")),
+            similar=raw.get("similar", 1.0),
         )
 
     def name_of(self, match: Match) -> str:
@@ -91,15 +94,31 @@ def located(match: Match, detail: str) -> str:
     return f"- {match.path}:{match.lines[0]}  {detail}"
 
 
+def similarity(one: tuple[str, ...], other: tuple[str, ...], least: float) -> float:
+    compared = SequenceMatcher(None, one, other, autojunk=False)
+    return compared.ratio() if compared.quick_ratio() >= least else 0.0
+
+
 def gone(change: Change, before: Side, now: Side) -> list[str]:
-    kept = now.matches(change)
-    names = {change.name_of(match) for match in kept}
-    shapes = {with_renamed_variables(match.text) for match in kept}
-    return [
-        located(match, change.name_of(match))
-        for match in before.matches(change)
-        if change.name_of(match) not in names and with_renamed_variables(match.text) not in shapes
-    ]
+    old, new = before.matches(change), now.matches(change)
+    old_names, new_names = ({change.name_of(match) for match in side} for side in (old, new))
+    removed = [match for match in old if change.name_of(match) not in new_names]
+    added = [with_renamed_variables(match.text) for match in new if change.name_of(match) not in old_names]
+    scored = sorted(
+        (
+            (similarity(with_renamed_variables(match.text), shape, change.similar), index, successor)
+            for index, match in enumerate(removed)
+            for successor, shape in enumerate(added)
+        ),
+        reverse=True,
+    )
+    succeeded: set[int] = set()
+    taken: set[int] = set()
+    for score, index, successor in scored:
+        if score >= change.similar and index not in succeeded and successor not in taken:
+            succeeded.add(index)
+            taken.add(successor)
+    return [located(match, change.name_of(match)) for index, match in enumerate(removed) if index not in succeeded]
 
 
 def paired(change: Change, before: list[Match], now: list[Match]) -> list[tuple[Match, Match]]:
