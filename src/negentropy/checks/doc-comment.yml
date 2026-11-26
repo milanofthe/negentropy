@@ -1,7 +1,9 @@
 name: doc-comment
 message: >-
   This doc comment does not document the public API. Doc comments are allowed only on exported items
-  inside the paths that negentropy.toml lists under `public`. Delete the doc comment. If the item
+  inside the paths that negentropy.toml lists under `public`. An item that an attribute exports to
+  another language, such as `#[pyfunction]`, `#[pymethods]`, `#[wasm_bindgen]` or `#[no_mangle]`,
+  counts as exported. Delete the doc comment. If the item
   needs an explanation, rename or restructure it. In the constants module a doc comment may stay
   on any constant, so that the measurement or the derivation stands next to its value.
 cleanup: >-
@@ -47,9 +49,32 @@ select:
                 inside:
                   kind: enum_variant
         not:
-          has:
-            kind: visibility_modifier
-            regex: '^pub$'
+          any:
+            - has:
+                kind: visibility_modifier
+                regex: '^pub$'
+            - follows:
+                stopBy:
+                  not:
+                    any:
+                      - kind: line_comment
+                      - kind: block_comment
+                      - kind: attribute_item
+                kind: attribute_item
+                regex: '^#\[(unsafe\()?(pyo3::)?(pyfunction|pyclass|pymodule|pyo3|getter|setter|new|staticmethod|classmethod|wasm_bindgen|no_mangle|export_name)'
+            - inside:
+                kind: declaration_list
+                inside:
+                  kind: impl_item
+                  follows:
+                    stopBy:
+                      not:
+                        any:
+                          - kind: line_comment
+                          - kind: block_comment
+                          - kind: attribute_item
+                    kind: attribute_item
+                    regex: '^#\[(pyo3::)?(pymethods|wasm_bindgen)'
   - language: rust
     detail: the item is internal
     not_in: [constants]

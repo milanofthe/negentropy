@@ -466,3 +466,40 @@ def test_a_name_that_is_a_sentence_fails_unless_it_names_a_test(repo):
         ("tools/device.py", 1, "long-name"),
         ("tools/device.py", 4, "long-name"),
     }
+
+
+def test_an_item_exported_to_another_language_keeps_its_doc(repo):
+    write(repo, {"src/binding.rs": (
+        "/// Factors the matrix.\n"
+        "#[pyfunction]\n"
+        "fn factor(n: usize) -> usize { n }\n"
+        "#[pyclass]\n"
+        "/// A factorization.\n"
+        "struct Factor { n: usize }\n"
+        "#[pymethods]\n"
+        "impl Factor {\n"
+        "    /// The order of the matrix.\n"
+        "    #[getter]\n"
+        "    fn order(&self) -> usize { self.n }\n"
+        "    /// Solves with the factors.\n"
+        "    fn solve(&self) -> usize { self.n }\n"
+        "}\n"
+        "impl Factor {\n"
+        "    /// Counts the pivots.\n"
+        "    fn pivots(&self) -> usize { self.n }\n"
+        "}\n"
+        "/// The entry point of the C interface.\n"
+        "#[unsafe(no_mangle)]\n"
+        "extern \"C\" fn rslab_order(n: usize) -> usize { n }\n"
+    )})
+    assert found(repo) == {("src/binding.rs", 16, "doc-comment")}
+
+
+def test_two_stubs_with_one_signature_are_not_a_duplicate(repo):
+    write(repo, {"stubs/solver.pyi": (
+        "class Lu:\n"
+        "    def solve(self, b: object, transpose: bool = False, conjugate: bool = False) -> object: ...\n"
+        "class Ldlt:\n"
+        "    def solve(self, b: object, transpose: bool = False, conjugate: bool = False) -> object: ...\n"
+    )})
+    assert found(repo) == set()
