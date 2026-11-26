@@ -34,7 +34,6 @@ COMMENTED = {
     "ci.yml": "# Only when the package or this file changed.\nname: CI\n",
     "join.sh": "#!/bin/sh\n# the address may have been another machine's\necho joining\n",
     "solver.rs": (
-        "// SAFETY: the pointer is checked above\n"
         "/// Solves the system.\n"
         "pub fn solve() {}\n"
         "/// Picks the pivot.\n"
@@ -110,8 +109,8 @@ def test_a_comment_fails_and_what_a_tool_or_a_source_needs_stays(repo):
         ("Dialog.svelte", 7, "comment"),
         ("ci.yml", 1, "comment"),
         ("join.sh", 2, "comment"),
-        ("solver.rs", 4, "doc-comment"),
-        ("solver.rs", 5, "comment"),
+        ("solver.rs", 3, "doc-comment"),
+        ("solver.rs", 4, "comment"),
         ("api.py", 5, "doc-comment"),
     }
 
@@ -351,3 +350,44 @@ def test_a_poisoned_lock_may_panic_and_a_test_file_beside_the_code_is_a_test(rep
         "src/cache_tests.rs": "fn check() { assert_eq!(Some(1).unwrap(), 1); }\n",
     })
     assert found(repo) == {("src/cache.rs", 7, "unwrap")}
+
+
+def test_a_safety_comment_stays_only_directly_before_unsafe_code(repo):
+    write(repo, {"src/bytes.rs": (
+        "fn read(p: *const u8) -> u8 {\n"
+        "    // SAFETY: the caller passes a pointer\n"
+        "    // that stays valid for the whole call.\n"
+        "    let first = unsafe { *p };\n"
+        "    // SAFETY: nothing of that kind follows this line.\n"
+        "    let second = first;\n"
+        "    // SAFETY: the pointer is still valid.\n"
+        "    // The unsafe keyword appears only in this comment.\n"
+        "    second\n"
+        "}\n"
+        "// SAFETY: the bytes are plain data.\n"
+        "unsafe impl Send for Bytes {}\n"
+    )})
+    assert found(repo) == {
+        ("src/bytes.rs", 5, "comment"),
+        ("src/bytes.rs", 7, "comment"),
+        ("src/bytes.rs", 8, "comment"),
+    }
+
+
+def test_a_commit_may_keep_the_findings_of_its_parent_but_not_add_one(repo, monkeypatch, capsys):
+    write(repo, {"a.py": "x = 1  # why\n", "b.py": "y = 2\n"})
+    git(repo, "add", "-A")
+    git(repo, "commit", "-q", "-m", "Start")
+    monkeypatch.chdir(repo)
+    assert main(["check", "--against", "HEAD"]) == 0
+    assert capsys.readouterr().out == "negentropy: no check has more findings than at HEAD (comment 1)\n"
+
+    write(repo, {"b.py": "y = 2  # because\n"})
+    assert main(["check", "--against", "HEAD"]) == 1
+    printed = capsys.readouterr().out
+    assert printed.startswith("negentropy: these checks have more findings than at HEAD: comment 2 (1 at HEAD). ")
+    assert "- [ ] b.py:1" in printed and "a.py" not in printed
+
+    write(repo, {"a.py": "x = 1\n", "b.py": "y = 2\n"})
+    assert main(["check", "--against", "HEAD"]) == 0
+    assert capsys.readouterr().out == "negentropy: clean\n"

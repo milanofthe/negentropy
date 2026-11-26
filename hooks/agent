@@ -5,4 +5,4 @@ negentropy=$(command -v negentropy || command -v "$HOME/.local/bin/negentropy") 
 	echo "negentropy is not installed or not on PATH: pipx install git+https://github.com/milanofthe/negentropy" >&2
 	exit 2
 }
-"$negentropy" check >&2 || exit 2
+"$negentropy" check --against HEAD >&2 || exit 2

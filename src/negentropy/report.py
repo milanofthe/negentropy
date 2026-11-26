@@ -21,6 +21,10 @@ def items(findings: list[Finding]) -> list[str]:
     return lines
 
 
+def counts(findings: list[Finding]) -> dict[str, int]:
+    return {check: len(items([f for f in findings if f.check == check])) for check in {f.check for f in findings}}
+
+
 def render(findings: list[Finding], book: Rulebook, next_phase_only: bool = False) -> str:
     sections = [(rule, items([f for f in findings if f.check == rule.name])) for rule in book.rules]
     sections = [(rule, listed) for rule, listed in sections if listed]

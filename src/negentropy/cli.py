@@ -2,21 +2,25 @@ from __future__ import annotations
 
 import argparse
 import sys
+import tempfile
 from pathlib import Path
 
 from negentropy import messages
-from negentropy.codebase import Codebase, root_of
+from negentropy.codebase import Codebase, changed_since, export, has_revision, root_of
 from negentropy.config import Config
 from negentropy.engine import Engine
 from negentropy.finding import Finding, ToolError
-from negentropy.report import render
+from negentropy.report import counts, render
 from negentropy.rules import Rulebook
 
 
 def parser() -> argparse.ArgumentParser:
     top = argparse.ArgumentParser(prog="negentropy", description="Checks the whole codebase and lists the findings.")
     commands = top.add_subparsers(dest="command")
-    commands.add_parser("check", help="check the codebase of the current repository (the default)")
+    check = commands.add_parser("check", help="check the codebase of the current repository (the default)")
+    check.add_argument(
+        "--against", metavar="REVISION", help="pass if no check has more findings than at this revision"
+    )
     commands.add_parser("next", help="check the codebase and list only the phase to fix next")
     message = commands.add_parser("message", help="check a commit message in a file")
     message.add_argument("file", type=Path)
@@ -40,6 +44,32 @@ def run(args: argparse.Namespace, root: Path, book: Rulebook, config: Config) ->
     )
 
 
+def at_revision(root: Path, revision: str, book: Rulebook, config: Config) -> list[Finding]:
+    if not has_revision(root, revision):
+        return []
+    with tempfile.TemporaryDirectory() as directory:
+        files = export(root, revision, Path(directory))
+        return Engine(Codebase(Path(directory), config, files), book).findings()
+
+
+def compared(found: list[Finding], root: Path, revision: str, book: Rulebook, config: Config) -> tuple[str, int]:
+    now, before = counts(found), counts(at_revision(root, revision, book, config))
+    grown = {check: count for check, count in now.items() if count > before.get(check, 0)}
+    if not grown:
+        kept = ", ".join(f"{check} {count}" for check, count in sorted(now.items()))
+        return f"negentropy: no check has more findings than at {revision} ({kept})", 0
+    of_grown = [finding for finding in found if finding.check in grown]
+    changed = changed_since(root, revision) if has_revision(root, revision) else set()
+    in_changed = [finding for finding in of_grown if finding.path in changed]
+    growth = ", ".join(f"{check} {count} ({before.get(check, 0)} at {revision})" for check, count in sorted(grown.items()))
+    scope = "in the files changed since then" if in_changed else "in the codebase"
+    header = (
+        f"negentropy: these checks have more findings than at {revision}: {growth}. "
+        f"The findings of these checks {scope} follow."
+    )
+    return "\n\n".join([header, render(in_changed or of_grown, book)]), 1
+
+
 def main(argv: list[str] | None = None) -> int:
     sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
     try:
@@ -51,8 +81,13 @@ def main(argv: list[str] | None = None) -> int:
     except ToolError as error:
         print(f"negentropy: {error}", file=sys.stderr)
         return 2
+    against = getattr(args, "against", None)
+    if against and found:
+        report, status = compared(found, root, against, book, config)
+    else:
+        report, status = render(found, book, next_phase_only=args.command == "next"), 1 if found else 0
     try:
-        print(render(found, book, next_phase_only=args.command == "next"), flush=True)
+        print(report, flush=True)
     except BrokenPipeError:
         sys.stdout = None
-    return 1 if found else 0
+    return status
