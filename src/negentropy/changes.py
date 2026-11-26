@@ -14,11 +14,11 @@ from negentropy.config import Config
 from negentropy.engine import Engine
 from negentropy.finding import ToolError
 from negentropy.rules import PACKAGE, Rule, Rulebook, Selector, selectors
-from negentropy.structure import with_renamed_variables
+from negentropy.structure import resemblances, with_renamed_variables
 from negentropy.syntax import Match
 
 SHOWN_CHARACTERS = 100
-CHANGE_KEYS = {"name", "compare", "message", "select", "named", "value", "through", "lines", "similar"}
+CHANGE_KEYS = {"name", "compare", "message", "select", "named", "value", "through", "lines", "similar", "tokens"}
 WORD = re.compile(r"\b[A-Za-z_]\w*\b")
 
 
@@ -33,6 +33,7 @@ class Change:
     through: str = ""
     lines: bool = False
     similar: float = 1.0
+    tokens: int = 0
 
     @classmethod
     def of(cls, raw: dict) -> Change:
@@ -49,6 +50,7 @@ class Change:
             through=raw.get("through", ""),
             lines=bool(raw.get("lines")),
             similar=raw.get("similar", 1.0),
+            tokens=raw.get("tokens", 0),
         )
 
     def name_of(self, match: Match) -> str:
@@ -160,6 +162,30 @@ def more(change: Change, before: Side, now: Side) -> list[str]:
     return [f"- {path}  {old.get(path, 0)} -> {count}{unit}" for path, count in sorted(new.items()) if count > old.get(path, 0)]
 
 
+def resembles(change: Change, before: Side, now: Side) -> list[str]:
+    old = before.matches(change)
+    old_places = {(match.path, change.name_of(match)) for match in old}
+    old_shapes = {with_renamed_variables(match.text) for match in old}
+    shaped = [(match, with_renamed_variables(match.text)) for match in now.matches(change)]
+    shaped = [(match, shape) for match, shape in shaped if len(shape) >= change.tokens]
+    new = {
+        number
+        for number, (match, shape) in enumerate(shaped)
+        if (match.path, change.name_of(match)) not in old_places and shape not in old_shapes
+    }
+    nearest: dict[int, tuple[float, int]] = {}
+    for (one, other), ratio in resemblances([shape for _, shape in shaped], change.similar).items():
+        for written, partner in ((one, other), (other, one)):
+            if written in new and ratio < 1.0:
+                nearest[written] = max(nearest.get(written, (0.0, partner)), (ratio, partner))
+    listed = []
+    for written, (ratio, partner) in sorted(nearest.items()):
+        match, other = shaped[written][0], shaped[partner][0]
+        detail = f"{change.name_of(match)}: {int(100 * ratio)} percent like {change.name_of(other)} at {other.path}:{other.lines[0]}"
+        listed.append(located(match, detail))
+    return listed
+
+
 def config(change: Change, before: Side, now: Side) -> list[str]:
     old, new = before.config, now.config
     listed = [
@@ -173,7 +199,7 @@ def config(change: Change, before: Side, now: Side) -> list[str]:
     return listed
 
 
-COMPARISONS = {"gone": gone, "changed": changed, "more": more, "config": config}
+COMPARISONS = {"gone": gone, "changed": changed, "more": more, "resembles": resembles, "config": config}
 
 
 def report(root: Path, revision: str) -> str:

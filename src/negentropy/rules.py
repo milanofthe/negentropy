@@ -16,7 +16,7 @@ SELECTOR_KEYS = {
 }
 SHARED_KEYS = {"matches", "unless", "in", "not_in", "detail", "digits_over", "digits_up_to"}
 RULE_KEYS = SHARED_KEYS | {
-    "name", "message", "cleanup", "phase", "kind", "subject", "select", "tokens", "unless_subject",
+    "name", "message", "cleanup", "phase", "kind", "subject", "select", "tokens", "similar", "similar_tokens", "similar_not_in", "unless_subject",
 }
 KINDS = {"each", "unique", "unmatched"}
 
@@ -85,6 +85,9 @@ class Rule:
     subjects: tuple[str, ...] = ("codebase",)
     selectors: tuple[Selector, ...] = ()
     tokens: int = 0
+    similar: float = 0.0
+    similar_tokens: int = 0
+    similar_outside: tuple[str, ...] = ()
     unless_subject: re.Pattern | None = None
     cleanup: str = ""
     phase: str = ""
@@ -106,6 +109,9 @@ class Rule:
             subjects=listed(raw.get("subject", "codebase")),
             selectors=selectors(raw, source),
             tokens=raw.get("tokens", 0),
+            similar=raw.get("similar", 0.0),
+            similar_tokens=raw.get("similar_tokens", 0),
+            similar_outside=listed(raw.get("similar_not_in")),
             unless_subject=re.compile(raw["unless_subject"]) if "unless_subject" in raw else None,
             cleanup=raw.get("cleanup", ""),
             phase=raw.get("phase", ""),
@@ -168,8 +174,8 @@ class Rulebook:
             )
         book = cls(tuple(rule for rule in rules if rule.name not in config.off), phases, scopes, base["languages"], base["terms"], base["reported"])
         for rule in book.rules:
-            for selector in rule.selectors:
-                missing = set(selector.within + selector.outside) - set(scopes)
+            for named in [selector.within + selector.outside for selector in rule.selectors] + [rule.similar_outside]:
+                missing = set(named) - set(scopes)
                 if missing:
                     raise ToolError(f"{rule.name}: unknown scopes {sorted(missing)}; the existing scopes are {sorted(scopes)}")
         return book

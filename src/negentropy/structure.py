@@ -1,7 +1,11 @@
 from __future__ import annotations
 
 import re
+from collections import defaultdict
+from difflib import SequenceMatcher
 
+SHINGLE_TOKENS = 6
+COMMON_SHINGLE = 64
 TOKEN = re.compile(
     r"""//[^\n]*|/\*.*?\*/|\#[^\n]*|"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'|[A-Za-z_][A-Za-z_0-9]*|\d[\w.]*|\S""", re.S
 )
@@ -28,3 +32,25 @@ def with_renamed_variables(function: str) -> tuple[str, ...]:
 def significant_digits(literal: str) -> int:
     mantissa = re.split(r"[eE]", re.sub(r"_|f32$|f64$|[jJ]$", "", literal))[0]
     return len(mantissa.replace(".", "").lstrip("0").rstrip("0"))
+
+
+def resemblances(shapes: list[tuple[str, ...]], least: float) -> dict[tuple[int, int], float]:
+    holders: dict[tuple[str, ...], list[int]] = defaultdict(list)
+    for number, shape in enumerate(shapes):
+        for shingle in {shape[start : start + SHINGLE_TOKENS] for start in range(len(shape) - SHINGLE_TOKENS + 1)}:
+            holders[shingle].append(number)
+    candidates = {
+        (one, other)
+        for members in holders.values()
+        if len(members) <= COMMON_SHINGLE
+        for position, one in enumerate(members)
+        for other in members[position + 1 :]
+    }
+    found = {}
+    for one, other in candidates:
+        compared = SequenceMatcher(None, shapes[one], shapes[other], autojunk=False)
+        if compared.real_quick_ratio() >= least and compared.quick_ratio() >= least:
+            ratio = compared.ratio()
+            if ratio >= least:
+                found[(one, other)] = ratio
+    return found

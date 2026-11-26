@@ -57,14 +57,15 @@ that matches no finding is itself a finding. Whoever works on the code may add a
 `reported`, while entries under `allow` and `exempt` are the decision of the owner.
 
 `negentropy changes REVISION` lists the changes since a revision that pass every check and can still
-hide a problem: tests that were removed, bounds and tolerances of tests that changed, new
+hide a problem: tests that were removed, bounds and tolerances of tests that changed, new functions
+that resemble an existing one, new
 suppressions of lints and tests, more code inside macro definitions, more unsafe code and new
 exceptions in negentropy.toml. The command never fails. Its list is for the review of a pull request,
 where each of these changes needs a reason.
 
 negentropy runs in two places. It installs no hooks and never runs by itself.
 
-- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.12.0` after a checkout with
+- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.13.0` after a checkout with
   `fetch-depth: 0`. The step writes the report and the list of `negentropy changes` to the summary of
   the run.
 - By hand in a checkout: `negentropy check` reports the whole codebase. `negentropy check --against

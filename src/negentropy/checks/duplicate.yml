@@ -4,10 +4,16 @@ cleanup: >-
   Start with the function that has the most copies. Move it to a module that all callers can reach,
   and replace the copies with calls.
 tokens: 25
+similar: 0.9
+similar_tokens: 80
+similar_not_in: [case]
 message: >-
-  This function is identical to another function except for the names of its variables. Keep one of
-  the two functions and call it from both places. If the two copies need to differ, turn the
-  difference into a parameter. Search the codebase for an existing function before you write a new
+  This function is identical to another function except for the names of its variables, or it has
+  at least 80 tokens of which at least 90 percent agree with another function. Keep one of the two
+  functions and call it from both places. If the two copies need to differ, turn the difference
+  into a parameter, a generic type or a closure, and keep the shared logic in one function. A test
+  function is reported only if it is identical to another one, because the tests of several cases
+  may repeat their steps. Search the codebase for an existing function before you write a new
   helper. A function whose body is one call, one field or one reference is not reported, because
   a thin forwarder repeats no logic. Do not move the copies into a macro, because the copies then
   still exist and no check reads them.

@@ -68,6 +68,23 @@ scopes:
                 kind: attribute_item
             kind: attribute_item
             regex: '^#\[cfg\((all\(\s*)?test\b'
+  case:
+    select:
+      - language: rust
+        rule:
+          kind: function_item
+          follows:
+            stopBy:
+              not:
+                kind: attribute_item
+            kind: attribute_item
+            regex: '^#\[(\w+::)*(test|rstest|test_case|bench)\b'
+      - language: python
+        rule:
+          kind: function_definition
+          has:
+            field: name
+            regex: '^test_'
   assertion:
     select:
       - language: rust
