@@ -9,7 +9,10 @@ if [ -f "$root/negentropy.toml" ]; then
 		exit 1
 	}
 	case "$name" in
-	pre-commit) "$negentropy" check --against HEAD || exit 1 ;;
+	pre-commit)
+		"$negentropy" check --against HEAD || exit 1
+		"$negentropy" changes HEAD
+		;;
 	commit-msg) "$negentropy" message "$1" || exit 1 ;;
 	esac
 fi

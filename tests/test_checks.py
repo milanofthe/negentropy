@@ -571,3 +571,55 @@ def test_a_thin_forwarder_is_no_duplicate_and_a_gated_test_module_is_test_code(r
         ("src/solvers.rs", 12, "duplicate"),
         ("src/solvers.rs", 20, "test-bound"),
     }
+
+
+def test_the_changes_that_can_hide_a_problem_are_listed_for_the_owner(repo, monkeypatch, capsys):
+    write(repo, {
+        "tests/constants.py": "RESIDUAL = 1e-8\nSIZE = 40\n",
+        "tests/test_solve.py": (
+            "def test_the_residual_is_small():\n    assert residual() < 1e-6\n"
+            "def test_the_work_is_linear():\n    assert work(2 * n) < 3 * work(n)\n"
+            "def test_the_names_differ():\n    assert solve(first) == solve(second)\n"
+            "def test_the_literal_gets_a_name():\n    assert error() < 1e-8\n"
+        ),
+        "src/lib.rs": "pub fn first(values: &[f64]) -> f64 { values[0] }\n",
+    })
+    git(repo, "add", "-A")
+    git(repo, "commit", "-q", "-m", "Start")
+    monkeypatch.chdir(repo)
+    assert main(["changes", "HEAD"]) == 0
+    assert capsys.readouterr().out == "negentropy: no changes since HEAD that the owner needs to review\n"
+
+    write(repo, {
+        "tests/constants.py": "RESIDUAL = 1e-4\nSIZE = 40\nLOOSE = 1.25e-1\n",
+        "tests/test_solve.py": (
+            "from constants import LOOSE, RESIDUAL\n"
+            "def test_the_residual_is_small():\n    assert residual() < LOOSE\n"
+            "def test_other_names_same_body():\n    assert solve(a) == solve(b)\n"
+            "def test_the_literal_gets_a_name():\n    assert error() < RESIDUAL\n"
+        ),
+        "src/lib.rs": (
+            "#[allow(clippy::missing_safety_doc)]\n"
+            "pub fn first(values: &[f64]) -> f64 { unsafe { *values.get_unchecked(0) } }\n"
+            "macro_rules! hidden {\n    () => {\n        fn copy() {}\n    };\n}\n"
+        ),
+        "negentropy.toml": "exempt = [\"vendor/**\"]\n[allow]\nprint = ['^src/log\\.rs: ']\n",
+    })
+    assert main(["changes", "HEAD"]) == 0
+    printed = capsys.readouterr().out
+    assert printed.startswith(
+        "negentropy: changes since HEAD for the owner to review (removed-test 1, changed-bound 1, "
+        "changed-tolerance 2, suppression 1, macro-code 1, unsafe-code 1, exception 2)\n\n"
+        "The following changes do not fail a check"
+    )
+    listed = {line for line in printed.splitlines() if line.startswith("- ")}
+    assert listed == {
+        "- tests/test_solve.py:3  test_the_work_is_linear",
+        "- tests/constants.py:1  RESIDUAL: RESIDUAL = 1e-8 -> RESIDUAL = 1e-4",
+        "- tests/test_solve.py:2  test_the_residual_is_small: 1e-6 -> 1.25e-1",
+        "- tests/test_solve.py:6  test_the_literal_gets_a_name: 1e-8 -> 1e-4",
+        "- src/lib.rs  0 -> 1",
+        "- src/lib.rs  0 -> 5 lines",
+        "- allow print: ^src/log\\.rs: ",
+        "- exempt: vendor/**",
+    }

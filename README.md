@@ -60,13 +60,20 @@ reason until the owner has it fixed, corrects the check or moves the entry to `a
 that matches no finding is itself a finding. Whoever works on the code may add an entry under
 `reported`, while entries under `allow` and `exempt` are the decision of the owner.
 
+`negentropy changes REVISION` lists the changes since a revision that pass every check and can still
+hide a problem: tests that were removed, bounds and tolerances of tests that changed, new
+suppressions of lints and tests, more code inside macro definitions, more unsafe code and new
+exceptions in negentropy.toml. The command never fails. Its list is for the review of a pull request,
+where each of these changes needs a reason.
+
 negentropy can run in three places:
 
-- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.9.0` after a checkout with
-  `fetch-depth: 0`.
+- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.10.0` after a checkout with
+  `fetch-depth: 0`. The step writes the report and the list of `negentropy changes` to the summary of
+  the run.
 - At every commit: run `git config --global core.hooksPath <clone>/hooks` once per machine. The hook
   runs `negentropy check --against HEAD`, which accepts a commit if no check has more findings than
-  at `HEAD`, so that a cleanup can be committed in steps.
+  at `HEAD`, so that a cleanup can be committed in steps. It then prints `negentropy changes HEAD`.
 - After every edit by a coding agent: register `sh <clone>/hooks/agent` as a hook of the agent.
 
 negentropy is released under the MIT license.
