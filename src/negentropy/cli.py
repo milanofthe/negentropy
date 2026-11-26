@@ -22,8 +22,6 @@ def parser() -> argparse.ArgumentParser:
         "--against", metavar="REVISION", help="pass if no check has more findings than at this revision"
     )
     commands.add_parser("next", help="check the codebase and list only the phase to fix next")
-    message = commands.add_parser("message", help="check a commit message in a file")
-    message.add_argument("file", type=Path)
     history = commands.add_parser("commits", help="check the commit messages of a revision range")
     history.add_argument("revisions")
     history.add_argument("--title", default="", help="the title of the pull request")
@@ -37,8 +35,6 @@ def run(args: argparse.Namespace, root: Path, book: Rulebook, config: Config) ->
     if args.command in (None, "check", "next"):
         return Engine(Codebase(root, config), book).findings()
     allowed = config.characters
-    if args.command == "message":
-        return messages.of_text(book, "commit", "commit message", args.file.read_text(encoding="utf-8"), allowed)
     return (
         messages.of_history(book, root, args.revisions, allowed)
         + messages.of_text(book, "text", "pull request title", args.title, allowed)

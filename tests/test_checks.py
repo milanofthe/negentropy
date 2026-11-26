@@ -211,8 +211,9 @@ def test_the_report_is_a_checklist_in_the_order_to_fix(repo, monkeypatch, capsys
     assert main([]) == 0
     assert capsys.readouterr().out == "negentropy: clean\n"
 
-    write(repo, {"MESSAGE": "Two lines\n\nwith a body\n"})
-    assert main(["message", "MESSAGE"]) == 1
+    git(repo, "add", "-A")
+    git(repo, "commit", "-q", "-m", "Two lines\n\nwith a body")
+    assert main(["commits", "HEAD"]) == 1
     assert "A finding is resolved" not in capsys.readouterr().out
 
 

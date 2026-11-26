@@ -66,14 +66,14 @@ suppressions of lints and tests, more code inside macro definitions, more unsafe
 exceptions in negentropy.toml. The command never fails. Its list is for the review of a pull request,
 where each of these changes needs a reason.
 
-negentropy can run in three places:
+negentropy runs in two places. It installs no hooks and never runs by itself.
 
-- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.10.0` after a checkout with
+- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.11.0` after a checkout with
   `fetch-depth: 0`. The step writes the report and the list of `negentropy changes` to the summary of
   the run.
-- At every commit: run `git config --global core.hooksPath <clone>/hooks` once per machine. The hook
-  runs `negentropy check --against HEAD`, which accepts a commit if no check has more findings than
-  at `HEAD`, so that a cleanup can be committed in steps. It then prints `negentropy changes HEAD`.
-- After every edit by a coding agent: register `sh <clone>/hooks/agent` as a hook of the agent.
+- By hand in a checkout: `negentropy check` reports the whole codebase. `negentropy check --against
+  origin/main` passes if no check has more findings than at that revision, so that a cleanup can
+  proceed in steps. `negentropy commits origin/main..HEAD` checks the commit messages of a branch
+  before it is pushed.
 
 negentropy is released under the MIT license.
