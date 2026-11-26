@@ -2,13 +2,15 @@ name: doc-comment
 message: >-
   This doc comment does not document the public API. Doc comments are allowed only on exported items
   inside the paths that negentropy.toml lists under `public`. Delete the doc comment. If the item
-  needs an explanation, rename or restructure it.
+  needs an explanation, rename or restructure it. In the constants module a doc comment may stay
+  on any constant, so that the measurement or the derivation stands next to its value.
 cleanup: >-
   Decide first which paths are the public API and list them under `public` in negentropy.toml. Then
   delete the doc comments outside those paths and on internal items.
 select:
   - language: rust
     detail: the item is internal
+    not_in: [constants]
     rule:
       any:
         - kind: line_comment
@@ -50,6 +52,7 @@ select:
             regex: '^pub$'
   - language: rust
     detail: the item is internal
+    not_in: [constants]
     rule:
       all:
         - any:
@@ -82,6 +85,7 @@ select:
                   regex: '^thread_local$'
   - language: python
     detail: the item is internal
+    not_in: [constants]
     rule:
       kind: string
       inside:
@@ -109,6 +113,7 @@ select:
                   kind: function_definition
   - language: [javascript, typescript, tsx]
     detail: the item is internal
+    not_in: [constants]
     rule:
       kind: comment
       regex: '^/\*\*'

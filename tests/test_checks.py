@@ -400,3 +400,12 @@ def test_the_export_of_a_revision_reads_the_archive_to_its_end(repo, tmp_path_fa
         git(repo, "add", "-A")
         git(repo, "commit", "-q", "-m", "Start")
         assert export(repo, "HEAD", tmp_path_factory.mktemp("exported")) == ["wide.txt"]
+
+
+def test_a_constant_keeps_the_doc_that_states_where_its_value_comes_from(repo):
+    documented = (
+        "/// Measured on the reference machine: a block of 16 runs in 0.15 of the time one by one.\n"
+        "const LANES_WIDE: usize = 16;\n"
+    )
+    write(repo, {"src/constants.rs": documented, "src/tape.rs": documented})
+    assert found(repo) == {("src/tape.rs", 1, "doc-comment")}
