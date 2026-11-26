@@ -17,6 +17,7 @@ def parser() -> argparse.ArgumentParser:
     top = argparse.ArgumentParser(prog="negentropy", description="Checks the whole codebase and lists the findings.")
     commands = top.add_subparsers(dest="command")
     commands.add_parser("check", help="check the codebase of the current repository (the default)")
+    commands.add_parser("next", help="check the codebase and list only the phase to fix next")
     message = commands.add_parser("message", help="check a commit message in a file")
     message.add_argument("file", type=Path)
     history = commands.add_parser("commits", help="check the commit messages of a revision range")
@@ -27,7 +28,7 @@ def parser() -> argparse.ArgumentParser:
 
 
 def run(args: argparse.Namespace, root: Path, book: Rulebook, config: Config) -> list[Finding]:
-    if args.command in (None, "check"):
+    if args.command in (None, "check", "next"):
         return Engine(Codebase(root, config), book).findings()
     allowed = config.characters
     if args.command == "message":
@@ -45,12 +46,13 @@ def main(argv: list[str] | None = None) -> int:
         root = root_of(Path.cwd())
         config = Config.load(root)
         book = Rulebook.load(root, config)
-        found = run(parser().parse_args(argv), root, book, config)
+        args = parser().parse_args(argv)
+        found = run(args, root, book, config)
     except ToolError as error:
         print(f"negentropy: {error}", file=sys.stderr)
         return 2
     try:
-        print(render(found, book.rules), flush=True)
+        print(render(found, book, next_phase_only=args.command == "next"), flush=True)
     except BrokenPipeError:
         sys.stdout = None
     return 1 if found else 0

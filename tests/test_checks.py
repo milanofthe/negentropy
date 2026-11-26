@@ -191,14 +191,20 @@ def test_a_commit_message_is_one_line_and_names_no_tool_as_author(repo):
     assert [f.check for f in messages.of_history(book, repo, "main..HEAD")] == ["commit-message"]
 
 
-def test_the_report_is_a_checklist_with_one_section_per_check(repo, monkeypatch, capsys):
+def test_the_report_is_a_checklist_in_the_order_to_fix(repo, monkeypatch, capsys):
     write(repo, {"a.py": "x = 1  # why\n# and\n# more\ny = 2\n# again\n", "PLAN.md": "plan\n"})
     monkeypatch.chdir(repo)
     assert main([]) == 1
     printed = capsys.readouterr().out
-    assert printed.startswith("negentropy: 3 findings (comment 2, markdown 1)\n\n## comment (2)\n")
-    assert "\n- [ ] a.py:1-3\n- [ ] a.py:5\n" in printed
-    assert "\n## markdown (1)\n" in printed and "\n- [ ] PLAN.md:1" in printed
+    assert printed.startswith("negentropy: 3 findings (markdown 1, comment 2)\n\n# 1. Remove\n")
+    assert "\n## markdown (1)\n" in printed and "\n- [ ] PLAN.md:1\n" in printed
+    assert printed.index("# 1. Remove") < printed.index("# 5. Text") < printed.index("## comment (2)")
+    assert printed.endswith("\n- [ ] a.py:1-3\n- [ ] a.py:5\n")
+
+    assert main(["next"]) == 1
+    first = capsys.readouterr().out
+    assert "## markdown (1)" in first and "## comment" not in first
+    assert first.endswith("The later phases have 2 more findings. Run `negentropy next` again when this phase is clean.\n")
 
     write(repo, {"a.py": "x = 1\n"})
     (repo / "PLAN.md").unlink()

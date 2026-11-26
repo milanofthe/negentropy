@@ -14,6 +14,10 @@ in a YAML file, which also contains the message that explains how to fix a findi
 checks are in [src/negentropy/checks](src/negentropy/checks). A repository can add its own checks in
 the same format.
 
+The report lists the findings in the order in which they are best fixed, in phases from removing
+code to cleaning up comments. For a codebase with many findings, `negentropy next` shows only the
+phase to fix next.
+
 negentropy reads its configuration from `negentropy.toml` at the root of the repository. All keys are
 optional.
 

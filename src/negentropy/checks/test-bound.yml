@@ -4,6 +4,10 @@ message: >-
   stated error of the reference or from an analysis such as conditioning, discretisation order or
   machine epsilon. Define it as a named constant in the constants module and state the derivation
   there. A bound that was chosen so that the test passes only records what the code does today.
+cleanup: >-
+  Group the bounds by the quantity that they bound, for example a residual, a round-off error or a
+  discretisation error. Define one named constant per group together with its derivation. Do not
+  define one constant per number.
 matches: '[eE]-\d'
 digits_up_to: 7
 in: [test, assertion]
