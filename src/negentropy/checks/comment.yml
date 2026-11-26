@@ -15,7 +15,7 @@ cleanup: >-
   often contain words such as must, never, before or because, and express each one in code or in a
   test. After you express a constraint in a test, check that the test fails when the constraint is
   broken. Then delete the remaining comments. If you cannot express the content of a comment, do not
-  delete it silently. Ask the owner of negentropy.toml whether to allow it.
+  delete it silently. Keep the comment and report the finding under `reported` in negentropy.toml.
 unless:
   - 'https?://\S+'
   - 'SPDX-License-Identifier|Copyright \(c\)|Copyright \d{4}|Licensed under'

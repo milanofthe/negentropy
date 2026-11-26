@@ -27,6 +27,7 @@ class Engine:
     def __init__(self, codebase: Codebase, book: Rulebook | None = None):
         self.codebase = codebase
         self.book = book or Rulebook.load(codebase.root, codebase.config)
+        self.matched: set[int] = set()
 
     @cached_property
     def parsed(self) -> dict[Selector, list[Match]]:
@@ -88,27 +89,38 @@ class Engine:
             ):
                 yield match
 
-    def allowed(self, rule: Rule, match: Match) -> bool:
-        patterns = self.codebase.config.allow.get(rule.name, ())
+    def located(self, match: Match) -> str:
         lines = self.codebase.texts.get(match.path, [])
         source = lines[match.lines[0] - 1] if match.lines[0] <= len(lines) else ""
-        return any(re.search(pattern, f"{match.path}: {source}") for pattern in patterns)
+        return f"{match.path}: {source}"
 
-    def reported(self, rule: Rule, selector: Selector) -> Iterator[Match]:
+    def allowed(self, rule: Rule, match: Match) -> bool:
+        patterns = self.codebase.config.allow.get(rule.name, ())
+        return any(re.search(pattern, self.located(match)) for pattern in patterns)
+
+    def reason(self, rule: Rule, match: Match) -> str:
+        for index, entry in enumerate(self.codebase.config.reported):
+            if entry["check"] == rule.name and re.search(entry["match"], self.located(match)):
+                self.matched.add(index)
+                return entry["reason"]
+        return ""
+
+    def found(self, rule: Rule, selector: Selector) -> Iterator[Match]:
         return (match for match in self.selected(selector) if not self.allowed(rule, match))
 
     def each(self, rule: Rule) -> Iterator[Finding]:
         seen = set()
         for selector in rule.selectors:
-            for match in self.reported(rule, selector):
+            for match in self.found(rule, selector):
                 detail = names_of(selector, match.text) if selector.names else selector.detail
+                reason = self.reason(rule, match)
                 for line in match.lines:
                     if (match.path, line) not in seen:
                         seen.add((match.path, line))
-                        yield Finding(rule.name, match.path, line, detail)
+                        yield Finding(rule.name, match.path, line, detail, reason)
 
     def unique(self, rule: Rule) -> Iterator[Finding]:
-        found = [match for selector in rule.selectors for match in self.reported(rule, selector)]
+        found = [match for selector in rule.selectors for match in self.found(rule, selector)]
         first: dict[tuple[str, ...], Match] = {}
         for match in sorted(found, key=lambda match: (match.path, match.lines[0])):
             shape = with_renamed_variables(match.text)
@@ -116,7 +128,8 @@ class Engine:
                 continue
             if shape in first:
                 original = first[shape]
-                yield Finding(rule.name, match.path, match.lines[0], f"identical to {original.path}:{original.lines[0]}")
+                detail = f"identical to {original.path}:{original.lines[0]}"
+                yield Finding(rule.name, match.path, match.lines[0], detail, self.reason(rule, match))
             else:
                 first[shape] = match
 
@@ -130,6 +143,14 @@ class Engine:
                 line = next((n for n, text in enumerate(lines, start=1) if re.match(rf"\s*{name}\s*=", text)), 1)
                 yield Finding(rule.name, CONFIG_NAME, line, f"{name}: {counted} in the codebase, {declared} declared")
 
+    def unmatched(self, rule: Rule) -> Iterator[Finding]:
+        lines = self.codebase.texts.get(CONFIG_NAME, [])
+        headers = [n for n, text in enumerate(lines, start=1) if re.match(r"\s*\[\[reported\]\]", text)]
+        for index, entry in enumerate(self.codebase.config.reported):
+            if index not in self.matched:
+                line = headers[index] if index < len(headers) else 1
+                yield Finding(rule.name, CONFIG_NAME, line, f"{entry['check']}: {entry['match']}")
+
     def findings(self) -> list[Finding]:
         rules = self.book.about("codebase")
         countable = {name for rule in rules for name in rule.counts}
@@ -137,7 +158,8 @@ class Engine:
         if unknown:
             raise ToolError(f"{CONFIG_NAME}: `budget` can only count {sorted(countable)}; unknown: {sorted(unknown)}")
         kinds = {"each": self.each, "unique": self.unique, "count": self.count}
-        return [finding for rule in rules for finding in kinds[rule.kind](rule)]
+        found = [finding for rule in rules if rule.kind in kinds for finding in kinds[rule.kind](rule)]
+        return found + [finding for rule in rules if rule.kind == "unmatched" for finding in self.unmatched(rule)]
 
 
 def findings(codebase: Codebase) -> list[Finding]:

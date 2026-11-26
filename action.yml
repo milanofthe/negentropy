@@ -6,7 +6,7 @@ runs:
     - shell: bash
       run: pipx install "$GITHUB_ACTION_PATH"
     - shell: bash
-      run: negentropy check
+      run: negentropy check | tee -a "$GITHUB_STEP_SUMMARY"
     - shell: bash
       if: github.event_name == 'pull_request'
       env:

@@ -9,6 +9,7 @@ from pathlib import Path
 from negentropy.finding import ToolError
 
 CONFIG_NAME = "negentropy.toml"
+REPORTED_KEYS = {"check", "match", "reason"}
 
 
 @lru_cache(maxsize=None)
@@ -34,6 +35,7 @@ class Config:
     characters: str = ""
     budget: dict[str, int] = field(default_factory=dict)
     allow: dict[str, list[str]] = field(default_factory=dict)
+    reported: tuple[dict[str, str], ...] = ()
 
     @classmethod
     def load(cls, root: Path) -> Config:
@@ -44,4 +46,7 @@ class Config:
         unknown = set(raw) - {entry.name for entry in fields(cls)}
         if unknown:
             raise ToolError(f"{CONFIG_NAME}: unknown keys {sorted(unknown)}")
+        for entry in raw.get("reported", []):
+            if set(entry) != REPORTED_KEYS or not all(isinstance(value, str) and value.strip() for value in entry.values()):
+                raise ToolError(f"{CONFIG_NAME}: an entry under `reported` needs the texts {sorted(REPORTED_KEYS)}")
         return cls(**{key: tuple(value) if isinstance(value, list) else value for key, value in raw.items()})

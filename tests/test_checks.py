@@ -196,7 +196,7 @@ def test_the_report_is_a_checklist_in_the_order_to_fix(repo, monkeypatch, capsys
     assert main([]) == 1
     printed = capsys.readouterr().out
     assert printed.startswith("negentropy: 3 findings (markdown 1, comment 2)\n\nA finding is resolved by the change")
-    assert "report it to the owner" in printed.split("# 1. Remove")[0]
+    assert "add an entry `[[reported]]` to negentropy.toml" in printed.split("# 1. Remove")[0]
     assert "\n## markdown (1)\n" in printed and "\n- [ ] PLAN.md:1\n" in printed
     assert printed.index("# 1. Remove") < printed.index("# 5. Text") < printed.index("## comment (2)")
     assert printed.endswith("\n- [ ] a.py:1-3\n- [ ] a.py:5\n")
@@ -317,6 +317,39 @@ def test_the_repository_allows_an_exception_in_its_configuration(repo):
     )
     write(repo, {"src/lib.rs": library, "negentropy.toml": "[allow]\nenvironment = [\"NO_COLOR\"]\n"})
     assert found(repo) == {("src/lib.rs", 2, "environment")}
+
+
+def test_a_reported_finding_stays_listed_and_does_not_fail(repo, monkeypatch, capsys):
+    color = "pub fn color() -> bool { std::env::var_os(\"NO_COLOR\").is_none() }\n"
+    mode = "pub fn mode() -> bool { std::env::var_os(\"SOLVER_MODE\").is_some() }\n"
+    entry = "[[reported]]\ncheck = \"environment\"\nmatch = 'SOLVER_MODE'\nreason = \"The host sets the variable.\"\n"
+    write(repo, {"src/lib.rs": mode})
+    git(repo, "add", "-A")
+    git(repo, "commit", "-q", "-m", "Start")
+    write(repo, {"src/lib.rs": color + mode, "negentropy.toml": entry})
+    monkeypatch.chdir(repo)
+    assert main([]) == 1
+    printed = capsys.readouterr().out
+    assert printed.startswith("negentropy: 1 findings (environment 1)\n")
+    assert "\n- [ ] src/lib.rs:1\n\n# Reported (1)\nThese findings are reported and not resolved." in printed
+    assert printed.endswith("\n\n- [ ] src/lib.rs:2  environment: The host sets the variable.\n")
+
+    write(repo, {"src/lib.rs": mode})
+    assert main([]) == 0
+    assert capsys.readouterr().out.startswith("negentropy: clean\n\n# Reported (1)\n")
+
+    write(repo, {"src/lib.rs": mode + mode})
+    assert main(["check", "--against", "HEAD"]) == 0
+    assert "\n- [ ] src/lib.rs:1-2  environment: The host sets the variable.\n" in capsys.readouterr().out
+
+    write(repo, {"src/lib.rs": "pub fn mode() -> bool { true }\n"})
+    assert main(["check", "--against", "HEAD"]) == 1
+    printed = capsys.readouterr().out
+    assert "## reported (1)\nThis entry under `reported` in negentropy.toml matches no finding" in printed
+    assert printed.endswith("\n- [ ] negentropy.toml:1  environment: SOLVER_MODE\n")
+
+    write(repo, {"negentropy.toml": "[[reported]]\ncheck = \"environment\"\nmatch = 'SOLVER_MODE'\n"})
+    assert main([]) == 2
 
 
 INTERNAL_DOCS = (

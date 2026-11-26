@@ -41,6 +41,11 @@ features = 3
 
 [allow]
 environment = ["NO_COLOR"]
+
+[[reported]]
+check = "unwrap"
+match = '^src/pool\.rs: .*unreachable!'
+reason = "The trait erases the result type, so the fix belongs in the crate that defines it."
 ```
 
 An entry under `allow` is a regular expression for one check. A finding of that check is not
@@ -48,9 +53,16 @@ reported if the expression matches its path followed by its source line, for exa
 `src/sinks.rs: let color = std::env::var_os("NO_COLOR");`. Exceptions belong in this file and not
 in the code, so that the owner of the file decides about them.
 
+An entry `[[reported]]` is the answer to a finding that cannot be resolved as its message describes,
+or to a check that is wrong about the code. The expression under `match` is read like an entry
+under `allow`. A reported finding does not fail the check, and every report lists it with its
+reason until the owner has it fixed, corrects the check or moves the entry to `allow`. An entry
+that matches no finding is itself a finding. Whoever works on the code may add an entry under
+`reported`, while entries under `allow` and `exempt` are the decision of the owner.
+
 negentropy can run in three places:
 
-- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.8.0` after a checkout with
+- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.9.0` after a checkout with
   `fetch-depth: 0`.
 - At every commit: run `git config --global core.hooksPath <clone>/hooks` once per machine. The hook
   runs `negentropy check --against HEAD`, which accepts a commit if no check has more findings than

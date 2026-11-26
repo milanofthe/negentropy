@@ -1,0 +1,6 @@
+name: reported
+kind: unmatched
+message: >-
+  This entry under `reported` in negentropy.toml matches no finding of its check. If the finding is
+  resolved, delete the entry. If the finding still exists and its line has changed, correct the
+  expression so that it matches the path followed by the source line.

@@ -6,7 +6,8 @@ message: >-
   not trade the panic for unsafe code, and do not pair two sequences with an adaptor such as `zip`
   that stops silently at the shorter one. If
   the value can only be missing through a bug in this crate, and the types cannot exclude that without
-  a larger change, ask the owner of negentropy.toml to allow this line. An `unwrap` directly on
+  a larger change, keep the panic and report the finding under `reported` in negentropy.toml. An
+  `unwrap` directly on
   `lock()`, `read()` or `write()` is not reported, because it only passes on the panic of the
   thread that poisoned the lock. A panic macro such as `unreachable!` on the `None` or `Err` branch
   of a value is reported like an `unwrap`, because it is the same panic in another form.
