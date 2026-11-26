@@ -1,0 +1,78 @@
+id: comment-python
+language: python
+rule:
+  kind: comment
+---
+id: comment-python-string
+language: python
+rule:
+  kind: string
+  inside:
+    kind: expression_statement
+    follows:
+      stopBy: end
+      not:
+        kind: comment
+---
+id: doc-python
+language: python
+rule:
+  kind: string
+  inside:
+    kind: expression_statement
+    not:
+      follows:
+        stopBy: end
+        not:
+          kind: comment
+    inside:
+      any:
+        - kind: module
+        - kind: block
+          inside:
+            any:
+              - kind: function_definition
+              - kind: class_definition
+---
+id: doc-internal-python
+language: python
+rule:
+  kind: string
+  inside:
+    kind: expression_statement
+    not:
+      follows:
+        stopBy: end
+        not:
+          kind: comment
+    inside:
+      kind: block
+      inside:
+        any:
+          - kind: function_definition
+            has:
+              field: name
+              regex: '^_[^_]'
+          - kind: class_definition
+            has:
+              field: name
+              regex: '^_[^_]'
+          - kind: function_definition
+            inside:
+              stopBy: end
+              kind: function_definition
+---
+id: scope-assert-python
+language: python
+rule:
+  any:
+    - kind: assert_statement
+    - kind: call
+      has:
+        field: function
+        regex: '(^|\.)(approx|isclose|allclose|assert_allclose|assert_almost_equal|assert_array_almost_equal)$'
+---
+id: float-python
+language: python
+rule:
+  kind: float

@@ -1,0 +1,21 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "negentropy"
+version = "0.1.0"
+description = "Checks that keep a codebase from decaying while agents and people change it."
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.11"
+dependencies = ["ast-grep-cli==0.51.3"]
+
+[project.scripts]
+negentropy = "negentropy.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/negentropy"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

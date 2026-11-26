@@ -1,0 +1,19 @@
+id: comment-html
+language: html
+rule:
+  kind: comment
+---
+id: comment-css
+language: css
+rule:
+  kind: comment
+---
+id: comment-bash
+language: bash
+rule:
+  kind: comment
+---
+id: comment-yaml
+language: yaml
+rule:
+  kind: comment
