@@ -33,6 +33,8 @@ def render(findings: list[Finding], book: Rulebook, next_phase_only: bool = Fals
     total = sum(len(listed) for _, listed in sections)
     counts = ", ".join(f"{rule.name} {len(listed)}" for rule, listed in sections)
     blocks = [f"negentropy: {total} findings ({counts})"]
+    if any("codebase" in rule.subjects for rule, _ in sections):
+        blocks.append(book.terms)
     shown = 0
     for number, phase in enumerate(book.phases, start=1):
         of_phase = [(rule, listed) for rule, listed in sections if rule.phase == phase.name]

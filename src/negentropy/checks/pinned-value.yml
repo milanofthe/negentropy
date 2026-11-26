@@ -3,8 +3,10 @@ message: >-
   This number in a test has more than 7 significant digits, so it was copied from program output. If
   it is a reference value, define it as a named constant in the constants module and state its source
   there. If it is the output of the code under test, it is not a reference. In that case, test a
-  contract such as a reference solution, an invariant or the API, or delete the test. If the number is
-  input data, generate it from a seed or round it.
+  contract such as a reference solution, an invariant or the API, or delete the test. Before you
+  delete a test, name the property that it guards, for example a bound on the work or an invariant,
+  and keep a test of that property if no other test covers it. If the number is input data, generate
+  it from a seed or round it.
 digits_over: 7
 in: [test]
 not_in: [constants]

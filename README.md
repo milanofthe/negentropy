@@ -18,6 +18,10 @@ The report lists the findings in the order in which they are best fixed, in phas
 code to cleaning up comments. For a codebase with many findings, `negentropy next` shows only the
 phase to fix next.
 
+Every report of the codebase starts with the terms of the work. A finding is resolved by the change
+that its message describes. A change that only hides the code from the check does not resolve it,
+and a finding that cannot be resolved is left in place and reported to the owner of the repository.
+
 negentropy reads its configuration from `negentropy.toml` at the root of the repository. All keys are
 optional.
 
@@ -46,7 +50,7 @@ in the code, so that the owner of the file decides about them.
 
 negentropy can run in three places:
 
-- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.7.1` after a checkout with
+- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.8.0` after a checkout with
   `fetch-depth: 0`.
 - At every commit: run `git config --global core.hooksPath <clone>/hooks` once per machine. The hook
   runs `negentropy check --against HEAD`, which accepts a commit if no check has more findings than
