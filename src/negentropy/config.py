@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import tomllib
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, field, fields
 from functools import lru_cache
 from pathlib import Path
 
@@ -40,6 +40,7 @@ class Config:
     library: tuple[str, ...] = LIBRARY_PATHS
     off: tuple[str, ...] = ()
     characters: str = ""
+    budget: dict[str, int] = field(default_factory=dict)
 
     @classmethod
     def load(cls, root: Path) -> Config:
@@ -50,4 +51,4 @@ class Config:
         unknown = set(raw) - {entry.name for entry in fields(cls)}
         if unknown:
             raise ToolError(f"{CONFIG_NAME}: unknown keys {sorted(unknown)}")
-        return cls(**{key: value if isinstance(value, str) else tuple(value) for key, value in raw.items()})
+        return cls(**{key: tuple(value) if isinstance(value, list) else value for key, value in raw.items()})
