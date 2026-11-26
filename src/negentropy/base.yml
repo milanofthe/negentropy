@@ -1,3 +1,13 @@
+terms: >-
+  A finding is resolved by the change that its message describes. A change that only hides the code
+  from the check does not resolve the finding. Examples are moving code into a macro, adding an entry
+  under `allow` or `exempt` in negentropy.toml, suppressing a lint, deleting or disabling a test, and
+  loosening a bound. If you cannot resolve a finding in the way that its message describes, leave the
+  finding in place and report it to the owner of the repository with its location and the reason. A
+  finding that you report is a valid result of your work, and a finding that you hide is not. If a
+  fix changes behaviour or a public interface, name that change in your report. Only the owner adds
+  exceptions to negentropy.toml.
+
 phases:
   - name: remove
     reason: Start with what can be removed completely, because removed code needs no other fix.

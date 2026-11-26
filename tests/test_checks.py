@@ -195,7 +195,8 @@ def test_the_report_is_a_checklist_in_the_order_to_fix(repo, monkeypatch, capsys
     monkeypatch.chdir(repo)
     assert main([]) == 1
     printed = capsys.readouterr().out
-    assert printed.startswith("negentropy: 3 findings (markdown 1, comment 2)\n\n# 1. Remove\n")
+    assert printed.startswith("negentropy: 3 findings (markdown 1, comment 2)\n\nA finding is resolved by the change")
+    assert "report it to the owner" in printed.split("# 1. Remove")[0]
     assert "\n## markdown (1)\n" in printed and "\n- [ ] PLAN.md:1\n" in printed
     assert printed.index("# 1. Remove") < printed.index("# 5. Text") < printed.index("## comment (2)")
     assert printed.endswith("\n- [ ] a.py:1-3\n- [ ] a.py:5\n")
@@ -209,6 +210,10 @@ def test_the_report_is_a_checklist_in_the_order_to_fix(repo, monkeypatch, capsys
     (repo / "PLAN.md").unlink()
     assert main([]) == 0
     assert capsys.readouterr().out == "negentropy: clean\n"
+
+    write(repo, {"MESSAGE": "Two lines\n\nwith a body\n"})
+    assert main(["message", "MESSAGE"]) == 1
+    assert "A finding is resolved" not in capsys.readouterr().out
 
 
 SWITCHES = (

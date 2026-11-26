@@ -139,6 +139,7 @@ class Rulebook:
     phases: tuple[Phase, ...]
     scopes: dict[str, Scope]
     languages: dict[str, list[str]]
+    terms: str = ""
 
     @classmethod
     def load(cls, root: Path, config: Config) -> Rulebook:
@@ -172,7 +173,7 @@ class Rulebook:
                 selectors=selectors(raw, f"scope {name}"),
                 everywhere="config" in raw and paths is None,
             )
-        book = cls(tuple(rule for rule in rules if rule.name not in config.off), phases, scopes, base["languages"])
+        book = cls(tuple(rule for rule in rules if rule.name not in config.off), phases, scopes, base["languages"], base["terms"])
         for rule in book.rules:
             for selector in rule.all_selectors:
                 missing = set(selector.within + selector.outside) - set(scopes)
