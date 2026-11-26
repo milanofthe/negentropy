@@ -2,6 +2,7 @@ name: environment
 message: >-
   This library code reads an environment variable. Callers cannot see such a switch, and tests do not
   set it. Pass the value as an option through the API, and read the environment only in the binary.
+  If the variable is part of the interface of the library, ask the owner of negentropy.toml to allow it.
 in: [library]
 not_in: [test, binary]
 select:

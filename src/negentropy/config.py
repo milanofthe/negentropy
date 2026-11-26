@@ -33,6 +33,7 @@ class Config:
     off: tuple[str, ...] = ()
     characters: str = ""
     budget: dict[str, int] = field(default_factory=dict)
+    allow: dict[str, list[str]] = field(default_factory=dict)
 
     @classmethod
     def load(cls, root: Path) -> Config:

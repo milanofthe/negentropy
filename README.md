@@ -34,11 +34,19 @@ characters = "\u00e4\u00f6\u00fc\u00df"
 [budget]
 constants = 40
 features = 3
+
+[allow]
+environment = ["NO_COLOR"]
 ```
+
+An entry under `allow` is a regular expression for one check. A finding of that check is not
+reported if the expression matches its path followed by its source line, for example
+`src/sinks.rs: let color = std::env::var_os("NO_COLOR");`. Exceptions belong in this file and not
+in the code, so that the owner of the file decides about them.
 
 negentropy can run in three places:
 
-- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.1.0` after a checkout with
+- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.2.0` after a checkout with
   `fetch-depth: 0`.
 - At every commit: run `git config --global core.hooksPath <clone>/hooks` once per machine.
 - After every edit by a coding agent: register `sh <clone>/hooks/agent` as a hook of the agent.
