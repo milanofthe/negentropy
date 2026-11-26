@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from negentropy.checks import budgets, comments, commits, files, library, numbers, snapshots
+from negentropy.checks import budgets, comments, commits, duplicates, files, library, numbers, snapshots
 from negentropy.codebase import Codebase
 from negentropy.finding import Check, Finding, ToolError
 
@@ -10,6 +10,7 @@ CHECKS: list[Check] = [
     *numbers.CHECKS,
     *snapshots.CHECKS,
     *library.CHECKS,
+    *duplicates.CHECKS,
     *budgets.CHECKS,
     *commits.CHECKS,
 ]

@@ -95,3 +95,8 @@ rule:
     kind: expression_statement
     inside:
       kind: module
+---
+id: function-python
+language: python
+rule:
+  kind: function_definition

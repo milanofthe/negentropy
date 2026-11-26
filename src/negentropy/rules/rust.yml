@@ -127,3 +127,11 @@ rule:
   any:
     - kind: const_item
     - kind: static_item
+---
+id: function-rust
+language: rust
+rule:
+  kind: function_item
+  has:
+    field: body
+    kind: block

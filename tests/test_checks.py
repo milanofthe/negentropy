@@ -239,3 +239,38 @@ def test_a_count_is_the_one_the_repository_declares(repo):
         ("negentropy.toml", 2, "constants: 4 in the codebase, 3 declared"),
         ("negentropy.toml", 3, "features: 2 in the codebase, 3 declared"),
     }
+
+
+NORM = (
+    "pub fn norm(values: &[f64]) -> f64 {\n"
+    "    let mut sum = 0.0;\n"
+    "    for value in values {\n"
+    "        sum += value * value;\n"
+    "    }\n"
+    "    sum.sqrt()\n"
+    "}\n"
+)
+NORM_AGAIN = (
+    "fn length(xs: &[f64]) -> f64 {\n"
+    "    let mut acc = 0.0;\n"
+    "    for x in xs {\n"
+    "        acc += x * x;\n"
+    "    }\n"
+    "    acc.sqrt()\n"
+    "}\n"
+)
+MEAN = (
+    "fn mean(xs: &[f64]) -> f64 {\n"
+    "    let mut acc = 0.0;\n"
+    "    for x in xs {\n"
+    "        acc += x;\n"
+    "    }\n"
+    "    acc / xs.len() as f64\n"
+    "}\n"
+)
+
+
+def test_a_function_written_a_second_time_points_at_the_first(repo):
+    write(repo, {"src/dense.rs": NORM, "tests/refine.rs": NORM_AGAIN + MEAN, "src/short.rs": "fn a() -> u8 { 1 }\nfn b() -> u8 { 1 }\n"})
+    findings = [f for f in checks.codebase_findings(Codebase(repo)) if f.check == "duplicate"]
+    assert [(f.path, f.line, f.detail) for f in findings] == [("tests/refine.rs", 1, "the same as src/dense.rs:1")]
