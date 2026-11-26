@@ -201,3 +201,41 @@ def test_the_report_is_a_checklist_with_one_section_per_check(repo, monkeypatch,
     (repo / "PLAN.md").unlink()
     assert main([]) == 0
     assert capsys.readouterr().out == "negentropy: clean\n"
+
+
+SWITCHES = (
+    "#![allow(unused_variables)]\n"
+    "pub const A: f64 = 1.0;\n"
+    "#[allow(dead_code)]\n"
+    "fn old_path() {}\n"
+    "#[allow(clippy::too_many_arguments)]\n"
+    "fn lib() -> bool { std::env::var(\"SOLVER_PATH\").is_ok() }\n"
+)
+
+
+def test_library_code_reads_no_environment_and_keeps_no_dead_code(repo):
+    write(repo, {"src/lib.rs": SWITCHES, "src/main.rs": "fn main() { let _ = std::env::var(\"X\"); }\n",
+                 "src/settings.py": "import os\nMODE = os.environ.get(\"MODE\")\n"})
+    assert found(repo) == {
+        ("src/lib.rs", 1, "dead-code"),
+        ("src/lib.rs", 3, "dead-code"),
+        ("src/lib.rs", 6, "environment"),
+        ("src/settings.py", 2, "environment"),
+    }
+
+
+def test_a_count_is_the_one_the_repository_declares(repo):
+    files = {
+        "src/constants.rs": "pub const A: f64 = 1.0;\npub const B: f64 = 2.0;\nstatic C: u32 = 3;\n",
+        "src/constants.py": "TOL = 1.0\nlower = 2\n",
+        "src/lib.rs": "const ELSEWHERE: u32 = 1;\n",
+        "Cargo.toml": "[features]\ndefault = [\"fast\"]\nfast = []\nslow = []\n",
+    }
+    write(repo, {**files, "negentropy.toml": "[budget]\nconstants = 4\nfeatures = 2\n"})
+    assert found(repo) == set()
+    write(repo, {"negentropy.toml": "[budget]\nconstants = 3\nfeatures = 3\n"})
+    findings = checks.codebase_findings(Codebase(repo))
+    assert {(f.path, f.line, f.detail) for f in findings} == {
+        ("negentropy.toml", 2, "constants: 4 in the codebase, 3 declared"),
+        ("negentropy.toml", 3, "features: 2 in the codebase, 3 declared"),
+    }

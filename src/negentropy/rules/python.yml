@@ -76,3 +76,22 @@ id: float-python
 language: python
 rule:
   kind: float
+---
+id: environment-python
+language: python
+rule:
+  kind: attribute
+  regex: '^os\.(environ|getenv)$'
+---
+id: constant-python
+language: python
+rule:
+  kind: assignment
+  has:
+    field: left
+    kind: identifier
+    regex: '^[A-Z][A-Z0-9_]*$'
+  inside:
+    kind: expression_statement
+    inside:
+      kind: module

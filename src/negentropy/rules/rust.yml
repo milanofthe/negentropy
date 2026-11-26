@@ -104,3 +104,26 @@ rule:
   regex: '^(println|eprintln|print|eprint|dbg)$'
   inside:
     kind: macro_invocation
+---
+id: environment-rust
+language: rust
+rule:
+  kind: scoped_identifier
+  regex: '(^|::)env::(var|var_os|vars|vars_os)$'
+  inside:
+    kind: call_expression
+---
+id: deadcode-rust
+language: rust
+rule:
+  any:
+    - kind: attribute_item
+    - kind: inner_attribute_item
+  regex: '(allow|expect)\s*\([^)]*\b(dead_code|unused(_[a-z_]+)?)\b'
+---
+id: constant-rust
+language: rust
+rule:
+  any:
+    - kind: const_item
+    - kind: static_item

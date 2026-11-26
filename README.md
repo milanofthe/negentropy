@@ -41,6 +41,9 @@ codebase prints `negentropy: clean` and exits 0.
 | `snapshot` | a snapshot library, a snapshot assertion or a `.snap` file |
 | `unwrap` | `unwrap` or `expect` in Rust library code |
 | `print` | `println!`, `eprintln!` or `dbg!` in Rust library code |
+| `environment` | an environment variable read in Rust or Python library code |
+| `dead-code` | `allow(dead_code)` or `allow(unused...)` outside tests |
+| `budget` | a count that differs from the one the repository declares: constants in the constants modules, Cargo features |
 | `commit-message` | a commit message with more than one line |
 | `attribution` | a commit or pull request that names an AI tool as author |
 
@@ -70,6 +73,10 @@ markdown = ["docs/**"]
 exempt = ["vendor/**", "data/**"]
 characters = "\u00e4\u00f6\u00fc\u00df"
 off = ["attribution"]
+
+[budget]
+constants = 40
+features = 3
 ```
 
 - `public`: where doc comments are API documentation. Without it they stay on every item the
@@ -80,6 +87,9 @@ off = ["attribution"]
 - `exempt`: what no check reads.
 - `characters`: letters allowed besides ASCII.
 - `off`: checks the repository does not use.
+- `budget`: what the codebase has of a countable thing. No check can say whether one more tuning
+  constant is needed, so the count is declared here and a change of it is a change of this file.
+  With the repository's owner as code owner of `negentropy.toml`, an agent cannot raise it alone.
 
 ## Run
 
