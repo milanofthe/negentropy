@@ -1,8 +1,9 @@
 name: comment
 message: >-
-  A comment in code. Nothing checks a comment, so it goes stale and the next reader trusts it.
-  Delete it and let the code say it: a name, a type, an assertion or a test.
-  A constraint from outside the repository stays, with a link to its source.
+  This is a comment in code. No tool checks whether a comment is still true, so comments go stale and
+  mislead the next reader. Delete the comment and express its content in code, for example with a
+  better name, a type, an assertion or a test. You may keep a comment that describes a constraint from
+  outside the repository if it links to the source of that constraint.
 unless:
   - 'https?://\S+'
   - 'SPDX-License-Identifier|Copyright \(c\)|Copyright \d{4}|Licensed under'

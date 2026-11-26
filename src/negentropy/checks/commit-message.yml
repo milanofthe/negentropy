@@ -2,8 +2,8 @@ name: commit-message
 subject: [commit]
 unless_subject: '^Merge '
 message: >-
-  A commit message with more than one line. One short line says what changed;
-  the reasons and the details belong to the pull request or the issue.
+  This commit message has more than one line. Write one short line that says what changed, and put the
+  reasons and details into the pull request or the issue.
 select:
   - line: '\S'
     after_subject: true

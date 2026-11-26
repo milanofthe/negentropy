@@ -1,7 +1,7 @@
 name: environment
 message: >-
-  An environment variable read in library code: a switch no caller sees and no test sets.
-  Take the value as an option of the API, and let the binary read the environment.
+  This library code reads an environment variable. Callers cannot see such a switch, and tests do not
+  set it. Pass the value as an option through the API, and read the environment only in the binary.
 in: [library]
 not_in: [test, binary]
 select:

@@ -14,7 +14,7 @@ from negentropy.rules import Rulebook
 
 
 def parser() -> argparse.ArgumentParser:
-    top = argparse.ArgumentParser(prog="negentropy", description="Checks the whole codebase and lists what to fix.")
+    top = argparse.ArgumentParser(prog="negentropy", description="Checks the whole codebase and lists the findings.")
     commands = top.add_subparsers(dest="command")
     commands.add_parser("check", help="check the codebase of the current repository (the default)")
     message = commands.add_parser("message", help="check a commit message in a file")

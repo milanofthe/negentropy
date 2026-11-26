@@ -50,7 +50,7 @@ class Selector:
         if unknown:
             raise ToolError(f"{source}: a selector has unknown keys {sorted(unknown)}")
         if sum(key in raw for key in ("rule", "line", "file", "keys")) != 1:
-            raise ToolError(f"{source}: a selector selects by exactly one of rule, line, file, keys")
+            raise ToolError(f"{source}: a selector must have exactly one of the keys rule, line, file and keys")
         merged = {**shared, **raw}
         return cls(
             languages=listed(raw.get("language")),
@@ -94,10 +94,10 @@ class Rule:
         source = path.name
         unknown = set(raw) - RULE_KEYS
         if unknown or "name" not in raw or "message" not in raw:
-            raise ToolError(f"{source}: a check has a name, a message and none of {sorted(unknown)}")
+            raise ToolError(f"{source}: a check needs a name and a message; unknown keys: {sorted(unknown)}")
         kind = raw.get("kind", "each")
         if kind not in KINDS:
-            raise ToolError(f"{source}: kind is one of {sorted(KINDS)}")
+            raise ToolError(f"{source}: kind must be one of {sorted(KINDS)}")
         return cls(
             name=raw["name"],
             message=raw["message"],
@@ -136,7 +136,7 @@ class Rulebook:
         names = [rule.name for rule in rules]
         unknown = set(config.off) - set(names)
         if unknown or len(names) != len(set(names)):
-            raise ToolError(f"check names are unique and `off` names existing ones; unknown: {sorted(unknown)}")
+            raise ToolError(f"check names must be unique, and `off` may only list existing checks; unknown: {sorted(unknown)}")
         scopes = {}
         for name, raw in base["scopes"].items():
             configured = getattr(config, raw["config"]) if "config" in raw else None
@@ -152,7 +152,7 @@ class Rulebook:
             for selector in rule.all_selectors:
                 missing = set(selector.within + selector.outside) - set(scopes)
                 if missing:
-                    raise ToolError(f"{rule.name}: unknown scopes {sorted(missing)}; there are {sorted(scopes)}")
+                    raise ToolError(f"{rule.name}: unknown scopes {sorted(missing)}; the existing scopes are {sorted(scopes)}")
         return book
 
     def about(self, subject: str) -> list[Rule]:

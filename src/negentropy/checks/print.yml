@@ -1,7 +1,7 @@
 name: print
 message: >-
-  Printing in library code. A library returns values and reports through the logger its caller set up,
-  so the caller decides what is shown.
+  This library code prints directly. A library should return values and report through the logger that
+  the caller configured, so that the caller controls the output.
 in: [library]
 not_in: [test, binary]
 select:

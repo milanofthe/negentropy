@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 336" role="img" aria-label="negentropy checks a codebase against checks kept as data and returns a checklist of findings to fix">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 880 336" role="img" aria-label="negentropy runs its checks on a codebase and returns the findings as a checklist">
   <style>
     text { font-family: ui-sans-serif, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif; }
     .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
@@ -45,7 +45,7 @@
   <text class="ink mono" x="440" y="165" text-anchor="middle" font-size="12">test-bound</text>
   <rect class="pill" x="355" y="182" width="170" height="26" rx="13"/>
   <text class="ink mono" x="440" y="199" text-anchor="middle" font-size="12">budget</text>
-  <text class="muted" x="440" y="236" text-anchor="middle" font-size="12">one YAML file each</text>
+  <text class="muted" x="440" y="236" text-anchor="middle" font-size="12">one YAML file per check</text>
 
   <rect class="box" x="660" y="70" width="190" height="150" rx="10"/>
   <text class="ink" x="755" y="100" text-anchor="middle" font-size="15" font-weight="600">findings</text>
@@ -60,5 +60,5 @@
   <path class="flow" d="M550 145 H656" marker-end="url(#arrow)"/>
   <path class="flow" d="M755 220 V278 Q755 288 745 288 H135 Q125 288 125 278 V225" marker-end="url(#arrow)"/>
   <text class="ink" x="440" y="280" text-anchor="middle" font-size="13" font-weight="600">fix</text>
-  <text class="muted" x="440" y="318" text-anchor="middle" font-size="12">the same check after an edit, at a commit and before a merge</text>
+  <text class="muted" x="440" y="318" text-anchor="middle" font-size="12">The same check runs after an edit, at a commit and before a merge.</text>
 </svg>

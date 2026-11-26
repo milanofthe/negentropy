@@ -1,8 +1,9 @@
 name: test-bound
 message: >-
-  A test bound written as a number. A bound comes from the reference's own error or from a derivation
-  (conditioning, discretisation order, machine epsilon) and has a name in the constants module that says
-  which. A bound chosen so that the test passes pins what the code does today.
+  This test compares against a bound that is written as a bare number. Derive the bound from the
+  stated error of the reference or from an analysis such as conditioning, discretisation order or
+  machine epsilon. Define it as a named constant in the constants module and state the derivation
+  there. A bound that was chosen so that the test passes only records what the code does today.
 matches: '[eE]-\d'
 digits_up_to: 7
 in: [test, assertion]

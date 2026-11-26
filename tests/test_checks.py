@@ -276,7 +276,7 @@ MEAN = (
 def test_a_function_written_a_second_time_points_at_the_first(repo):
     write(repo, {"src/dense.rs": NORM, "tests/refine.rs": NORM_AGAIN + MEAN, "src/short.rs": "fn a() -> u8 { 1 }\nfn b() -> u8 { 1 }\n"})
     findings = [f for f in engine.findings(Codebase(repo)) if f.check == "duplicate"]
-    assert [(f.path, f.line, f.detail) for f in findings] == [("tests/refine.rs", 1, "the same as src/dense.rs:1")]
+    assert [(f.path, f.line, f.detail) for f in findings] == [("tests/refine.rs", 1, "identical to src/dense.rs:1")]
 
 
 OWN_RULE = """name: no-effect

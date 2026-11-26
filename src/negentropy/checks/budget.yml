@@ -1,8 +1,9 @@
 name: budget
 kind: count
 message: >-
-  A count that differs from the one negentropy.toml declares. More of them is a decision for the owner
-  of that file, not for the change that adds one: remove another, or ask. Fewer: lower the number.
+  The number of these items in the codebase differs from the number declared in negentropy.toml. If
+  the codebase has more, remove one or ask the owner of negentropy.toml to raise the number. If it has
+  fewer, lower the declared number.
 counts:
   constants:
     in: [constants]

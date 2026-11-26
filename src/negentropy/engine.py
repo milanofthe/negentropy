@@ -107,7 +107,7 @@ class Engine:
                 continue
             if shape in first:
                 original = first[shape]
-                yield Finding(rule.name, match.path, match.lines[0], f"the same as {original.path}:{original.lines[0]}")
+                yield Finding(rule.name, match.path, match.lines[0], f"identical to {original.path}:{original.lines[0]}")
             else:
                 first[shape] = match
 
@@ -126,7 +126,7 @@ class Engine:
         countable = {name for rule in rules for name in rule.counts}
         unknown = set(self.codebase.config.budget) - countable
         if unknown:
-            raise ToolError(f"{CONFIG_NAME}: `budget` counts {sorted(countable)}, not {sorted(unknown)}")
+            raise ToolError(f"{CONFIG_NAME}: `budget` can only count {sorted(countable)}; unknown: {sorted(unknown)}")
         kinds = {"each": self.each, "unique": self.unique, "count": self.count}
         return [finding for rule in rules for finding in kinds[rule.kind](rule)]
 

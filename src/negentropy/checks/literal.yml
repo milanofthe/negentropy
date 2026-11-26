@@ -1,8 +1,8 @@
 name: literal
 message: >-
-  A tolerance or a threshold written as a number in library code. It has a name in the constants module,
-  next to where it comes from: a derivation, a measurement, a reference's stated error.
-  Move it there and use the name.
+  This number in library code is a tolerance or a threshold without a name. Define it as a named
+  constant in the constants module, state there how the value was derived or measured, and use the
+  name here.
 matches: '[eE]-\d'
 in: [library]
 not_in: [test, constants]

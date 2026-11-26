@@ -1,8 +1,8 @@
 name: markdown
 message: >-
-  A markdown file that is not a README. A plan, a note or a finding goes into an issue, where it has a
-  date and gets closed; a file in the tree is read as the current state long after it stopped being it.
-  Markdown that is content is listed in negentropy.toml (`markdown`).
+  This markdown file is not a README. Plans, notes and findings belong in an issue, which has a date
+  and gets closed. A markdown file in the repository is still read as current long after it is
+  outdated. If the file is content, list it under `markdown` in negentropy.toml.
 select:
   - file: ["**/*.md"]
     not_in: [readme, content]

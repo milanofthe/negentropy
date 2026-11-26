@@ -2,9 +2,10 @@ name: duplicate
 kind: unique
 tokens: 25
 message: >-
-  A function that is another one with its variables renamed. Keep one and call it from both places;
-  if the copies should differ, the difference is a parameter. Before writing a helper, search for the
-  one that exists.
+  This function is identical to another function except for the names of its variables. Keep one of
+  the two functions and call it from both places. If the two copies need to differ, turn the
+  difference into a parameter. Search the codebase for an existing function before you write a new
+  helper.
 select:
   - language: rust
     rule:
