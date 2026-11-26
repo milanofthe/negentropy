@@ -19,3 +19,7 @@ select:
   - language: python
     rule:
       kind: function_definition
+      not:
+        has:
+          field: body
+          regex: '^\.\.\.$'
