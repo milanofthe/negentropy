@@ -10,7 +10,7 @@ whole codebase, the same after an edit, at a commit and before a merge.
 
 ```
 $ negentropy
-negentropy: 3 to fix (comment 2, test-bound 1)
+negentropy: 3 findings (comment 2, test-bound 1)
 
 ## comment (2)
 A comment in code. Nothing checks a comment, so it goes stale and the next reader trusts it. ...
@@ -92,6 +92,7 @@ features = 3
 - `exempt`: what no check reads.
 - `characters`: letters allowed besides ASCII.
 - `off`: checks the repository does not use.
+- `rules`: directories with the repository's own checks.
 - `budget`: what the codebase has of a countable thing. No check can say whether one more tuning
   constant is needed, so the count is declared here and a change of it is a change of this file.
   With the repository's owner as code owner of `negentropy.toml`, an agent cannot raise it alone.
@@ -130,12 +131,65 @@ jobs:
       - uses: milanofthe/negentropy@main
 ```
 
+## Rules are data
+
+A check is a YAML file: what it selects, where it applies, and the message that says what to do.
+
+```yaml
+name: literal
+message: >-
+  A tolerance or a threshold written as a number in library code. ...
+matches: '[eE]-\d'
+in: [library]
+not_in: [test, constants]
+select:
+  - language: rust
+    rule:
+      kind: float_literal
+  - language: python
+    rule:
+      kind: float
+```
+
+A selector picks by one of four things: `rule`, an [ast-grep rule](https://ast-grep.github.io/guide/rule-config.html)
+for one or more languages; `line`, a regular expression over the lines of the files; `file`, a path
+pattern; `keys`, the keys of a TOML table. `matches`, `unless`, `digits_over` and `digits_up_to`
+narrow by the selected text, `in` and `not_in` by scope. The scopes (`test`, `assertion`, `library`,
+`constants`, `public`, `binary`, `manifest`, `readme`, `content`) are data as well, in
+`src/negentropy/base.yml`.
+
+A check has one of three kinds. `each`: every selected place is a finding. `unique`: a selected
+place that repeats another one is a finding (`duplicate`). `count`: the number of selected places
+equals the number the repository declares (`budget`).
+
+The built-in checks are the files in `src/negentropy/checks`. A repository adds its own in the same
+form and lists the directory in `negentropy.toml`:
+
+```toml
+rules = ["tools/checks"]
+```
+
+```yaml
+name: no-effect
+message: >-
+  useEffect in product code. Derive the value while rendering, or use the data layer.
+not_in: [test]
+select:
+  - language: [typescript, tsx]
+    rule:
+      kind: identifier
+      regex: '^useEffect$'
+      inside:
+        kind: call_expression
+```
+
+A language ast-grep parses is added to a check as one more entry under `select`.
+
 ## A new check
 
-A check is a module in `src/negentropy/checks` that lists its `Check` objects: a name, the message
-that says what to do, and a function from the codebase to findings. Structural checks read the
-matches of an ast-grep rule in `src/negentropy/rules`. A test in `tests` shows the check failing on
-the mistake it is for. `skills/correct` is the procedure for an agent: from a correction that came
-twice to a check.
+The order is: make the mistake impossible by structure, then by a type, then by a check whose
+message names what to do, then by a test. A check is one file, and a test in `tests` shows it
+failing on the mistake it is for. `skills/correct` is the procedure for an agent: from a correction
+that came twice to a check.
 
 negentropy checks its own repository.

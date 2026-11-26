@@ -2,10 +2,11 @@ import subprocess
 
 import pytest
 
-from negentropy import checks
-from negentropy.checks import commits
+from negentropy import engine, messages
 from negentropy.cli import main
 from negentropy.codebase import Codebase
+from negentropy.config import Config
+from negentropy.rules import Rulebook
 
 EM_DASH = chr(0x2014)
 SHARP_S = chr(0xDF)
@@ -97,7 +98,7 @@ def repo(tmp_path):
 
 
 def found(root):
-    return {(f.path, f.line, f.check) for f in checks.codebase_findings(Codebase(root))}
+    return {(f.path, f.line, f.check) for f in engine.findings(Codebase(root))}
 
 
 def test_a_comment_fails_and_what_a_tool_or_a_source_needs_stays(repo):
@@ -171,7 +172,9 @@ def test_a_check_the_repository_turned_off_reports_nothing(repo):
 
 def test_a_commit_message_is_one_line_and_names_no_tool_as_author(repo):
     def named(message):
-        return [finding.check for finding in commits.message_findings("commit message", message)]
+        return [finding.check for finding in messages.of_text(book, "commit", "commit message", message)]
+
+    book = Rulebook.load(repo, Config())
 
     assert named("Name the tolerances of the eigenvalue tests") == []
     assert named("Revert \"x\"\n\nThis reverts commit 0123abc.") == []
@@ -185,7 +188,7 @@ def test_a_commit_message_is_one_line_and_names_no_tool_as_author(repo):
     write(repo, {"b.txt": "b\n"})
     git(repo, "add", "-A")
     git(repo, "commit", "-q", "-m", "Two lines\n\nwith a body")
-    assert [f.check for f in commits.commit_findings(repo, "main..HEAD")] == ["commit-message"]
+    assert [f.check for f in messages.of_history(book, repo, "main..HEAD")] == ["commit-message"]
 
 
 def test_the_report_is_a_checklist_with_one_section_per_check(repo, monkeypatch, capsys):
@@ -193,7 +196,7 @@ def test_the_report_is_a_checklist_with_one_section_per_check(repo, monkeypatch,
     monkeypatch.chdir(repo)
     assert main([]) == 1
     printed = capsys.readouterr().out
-    assert printed.startswith("negentropy: 3 to fix (comment 2, markdown 1)\n\n## comment (2)\n")
+    assert printed.startswith("negentropy: 3 findings (comment 2, markdown 1)\n\n## comment (2)\n")
     assert "\n- [ ] a.py:1-3\n- [ ] a.py:5\n" in printed
     assert "\n## markdown (1)\n" in printed and "\n- [ ] PLAN.md:1" in printed
 
@@ -234,7 +237,7 @@ def test_a_count_is_the_one_the_repository_declares(repo):
     write(repo, {**files, "negentropy.toml": "[budget]\nconstants = 4\nfeatures = 2\n"})
     assert found(repo) == set()
     write(repo, {"negentropy.toml": "[budget]\nconstants = 3\nfeatures = 3\n"})
-    findings = checks.codebase_findings(Codebase(repo))
+    findings = engine.findings(Codebase(repo))
     assert {(f.path, f.line, f.detail) for f in findings} == {
         ("negentropy.toml", 2, "constants: 4 in the codebase, 3 declared"),
         ("negentropy.toml", 3, "features: 2 in the codebase, 3 declared"),
@@ -272,5 +275,26 @@ MEAN = (
 
 def test_a_function_written_a_second_time_points_at_the_first(repo):
     write(repo, {"src/dense.rs": NORM, "tests/refine.rs": NORM_AGAIN + MEAN, "src/short.rs": "fn a() -> u8 { 1 }\nfn b() -> u8 { 1 }\n"})
-    findings = [f for f in checks.codebase_findings(Codebase(repo)) if f.check == "duplicate"]
+    findings = [f for f in engine.findings(Codebase(repo)) if f.check == "duplicate"]
     assert [(f.path, f.line, f.detail) for f in findings] == [("tests/refine.rs", 1, "the same as src/dense.rs:1")]
+
+
+OWN_RULE = """name: no-effect
+message: >-
+  useEffect in product code. Derive the value while rendering, or use the data layer.
+not_in: [test]
+select:
+  - language: [typescript, tsx]
+    rule:
+      kind: identifier
+      regex: '^useEffect$'
+      inside:
+        kind: call_expression
+"""
+
+
+def test_a_repository_adds_a_check_of_its_own_as_a_file(repo):
+    write(repo, {"tools/checks/no-effect.yml": OWN_RULE, "negentropy.toml": 'rules = ["tools/checks"]\n',
+                 "web/App.tsx": "export function App() {\n  useEffect(() => {}, []);\n  return null;\n}\n",
+                 "web/App.test.tsx": "useEffect(() => {}, []);\n"})
+    assert found(repo) == {("web/App.tsx", 2, "no-effect")}

@@ -1,0 +1,16 @@
+name: pinned-value
+message: >-
+  A number with more than 7 significant digits in a test: it was copied from a program's output.
+  A reference value is a named constant with its source in the constants module. The code's own output
+  is no reference: test the contract (a reference, an invariant, the API) or drop the test.
+  Input data does not need the digits: generate it from a seed or round it.
+digits_over: 7
+in: [test]
+not_in: [constants]
+select:
+  - language: rust
+    rule:
+      kind: float_literal
+  - language: python
+    rule:
+      kind: float

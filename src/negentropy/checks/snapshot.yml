@@ -1,0 +1,10 @@
+name: snapshot
+message: >-
+  A snapshot test. A snapshot fixes the output the code had when it was recorded, right or wrong.
+  Assert the contract instead: a reference, an invariant, the API.
+select:
+  - file: ["**/*.snap"]
+  - line: '\b(insta|expect[-_]test|goldenfile|syrupy|pytest-regressions|pytest-snapshot|snapshottest|jest-snapshot)\b'
+    in: [manifest]
+  - line: 'assert_\w*snapshot|expect!\[\[|toMatch(Inline)?Snapshot'
+    not_in: [manifest]

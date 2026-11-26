@@ -5,31 +5,26 @@ import os
 import shutil
 import subprocess
 import sysconfig
+import tempfile
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass
 from pathlib import Path
 
-from negentropy.finding import ToolError
+import yaml
 
-PACKAGE = Path(__file__).resolve().parent
+from negentropy.finding import ToolError
+from negentropy.rules import Selector
+
 COMMAND_LINE_BUDGET = 24_000
-LANGUAGES = {
-    ".rs", ".py", ".js", ".mjs", ".cjs", ".jsx", ".ts", ".mts", ".cts", ".tsx",
-    ".svelte", ".html", ".css", ".sh", ".bash", ".yml", ".yaml",
-}
 
 
 @dataclass(frozen=True)
 class Match:
-    rule: str
     path: str
-    text: str
     lines: tuple[int, ...]
-    offset: int
-
-    @property
-    def kind(self) -> str:
-        return self.rule.split("-")[0]
+    text: str
+    start: int | None = None
+    end: int | None = None
 
 
 def ast_grep() -> str:
@@ -53,44 +48,43 @@ def batches(paths: list[str]) -> list[list[str]]:
     return [group for group in grouped if group]
 
 
-def scan(root: Path, paths: list[str]) -> list[dict]:
-    done = subprocess.run(
-        [ast_grep(), "scan", "--config", str(PACKAGE / "sgconfig.yml"), "--json=stream", *paths],
-        cwd=root, capture_output=True, encoding="utf-8", errors="replace",
-    )
-    if done.returncode and not done.stdout:
-        raise ToolError(f"ast-grep: {done.stderr.strip()}")
-    return [json.loads(line) for line in done.stdout.splitlines() if line]
-
-
 def lines_of(found: dict) -> tuple[int, ...]:
     first, last = found["range"]["start"], found["range"]["end"]
     ends_on_its_last_line = last["column"] > 0 or last["line"] == first["line"]
     return tuple(range(first["line"] + 1, last["line"] + 1 + ends_on_its_last_line))
 
 
-@dataclass
-class Syntax:
-    matches: list[Match]
-    scopes: dict[tuple[str, str], list[tuple[int, int]]]
+def parse(root: Path, files: list[str], selectors: list[Selector], languages: dict) -> dict[Selector, list[Match]]:
+    documents, owners = [], {}
+    for selector in selectors:
+        for language in selector.languages:
+            identifier = f"n{len(documents)}"
+            owners[identifier] = selector
+            documents.append({"id": identifier, "language": language, "rule": selector.rule})
+    found: dict[Selector, list[Match]] = {selector: [] for selector in selectors}
+    if not documents or not files:
+        return found
+    with tempfile.TemporaryDirectory() as directory:
+        workspace = Path(directory)
+        (workspace / "rules").mkdir()
+        (workspace / "rules" / "all.yml").write_text(yaml.safe_dump_all(documents), encoding="utf-8")
+        (workspace / "sgconfig.yml").write_text(
+            yaml.safe_dump({"ruleDirs": ["rules"], "languageGlobs": languages}), encoding="utf-8"
+        )
 
-    @classmethod
-    def of(cls, root: Path, files: list[str]) -> Syntax:
-        parsed = [path for path in files if Path(path).suffix in LANGUAGES]
+        def scan(paths: list[str]) -> list[dict]:
+            done = subprocess.run(
+                [ast_grep(), "scan", "--config", str(workspace / "sgconfig.yml"), "--json=stream", *paths],
+                cwd=root, capture_output=True, encoding="utf-8", errors="replace",
+            )
+            if done.returncode and not done.stdout:
+                raise ToolError(f"ast-grep: {done.stderr.strip()}")
+            return [json.loads(line) for line in done.stdout.splitlines() if line]
+
         with ThreadPoolExecutor() as pool:
-            found = [entry for group in pool.map(lambda paths: scan(root, paths), batches(parsed)) for entry in group]
-        matches, scopes = [], {}
-        for entry in found:
-            path = entry["file"].replace("\\", "/").removeprefix("./")
-            span = entry["range"]["byteOffset"]
-            if entry["ruleId"].startswith("scope-"):
-                scopes.setdefault((path, entry["ruleId"].split("-")[1]), []).append((span["start"], span["end"]))
-            else:
-                matches.append(Match(entry["ruleId"], path, entry["text"], lines_of(entry), span["start"]))
-        return cls(matches, scopes)
-
-    def within(self, scope: str, match: Match) -> bool:
-        return any(start <= match.offset < end for start, end in self.scopes.get((match.path, scope), []))
-
-    def of_kind(self, *kinds: str) -> list[Match]:
-        return [match for match in self.matches if match.kind in kinds]
+            entries = [entry for group in pool.map(scan, batches(files)) for entry in group]
+    for entry in entries:
+        span = entry["range"]["byteOffset"]
+        path = entry["file"].replace("\\", "/").removeprefix("./")
+        found[owners[entry["ruleId"]]].append(Match(path, lines_of(entry), entry["text"], span["start"], span["end"]))
+    return found

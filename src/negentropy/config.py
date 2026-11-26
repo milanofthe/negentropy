@@ -10,15 +10,6 @@ from negentropy.finding import ToolError
 
 CONFIG_NAME = "negentropy.toml"
 
-CONSTANTS_PATHS = ("**/constants.rs", "**/constants/**", "**/constants.py")
-LIBRARY_PATHS = ("**/src/**",)
-TEST_PATHS = (
-    "**/tests/**", "**/benches/**", "**/examples/**", "**/tests.rs",
-    "**/test_*.py", "**/*_test.py", "**/conftest.py",
-    "**/*.test.ts", "**/*.test.js", "**/*.spec.ts", "**/*.spec.js",
-)
-BINARY_PATHS = ("**/main.rs", "**/bin/**", "**/build.rs", "**/cli.rs", "**/cli/**")
-
 
 @lru_cache(maxsize=None)
 def glob_pattern(glob: str) -> re.Pattern[str]:
@@ -34,10 +25,11 @@ def matches(path: str, globs) -> bool:
 @dataclass(frozen=True)
 class Config:
     public: tuple[str, ...] | None = None
-    markdown: tuple[str, ...] = ()
+    markdown: tuple[str, ...] | None = None
+    constants: tuple[str, ...] | None = None
+    library: tuple[str, ...] | None = None
     exempt: tuple[str, ...] = ()
-    constants: tuple[str, ...] = CONSTANTS_PATHS
-    library: tuple[str, ...] = LIBRARY_PATHS
+    rules: tuple[str, ...] = ()
     off: tuple[str, ...] = ()
     characters: str = ""
     budget: dict[str, int] = field(default_factory=dict)

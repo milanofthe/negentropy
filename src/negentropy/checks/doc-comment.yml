@@ -1,0 +1,123 @@
+name: doc-comment
+message: >-
+  A doc comment that is not API documentation. Doc comments stay on the items the language exports,
+  inside the paths negentropy.toml lists as `public`. Delete it; if the item needs explaining,
+  rename or restructure it.
+select:
+  - language: rust
+    detail: on an internal item
+    rule:
+      any:
+        - kind: line_comment
+        - kind: block_comment
+      has:
+        kind: outer_doc_comment_marker
+      not:
+        inside:
+          kind: declaration_list
+          inside:
+            kind: trait_item
+      precedes:
+        stopBy:
+          not:
+            any:
+              - kind: line_comment
+              - kind: block_comment
+              - kind: attribute_item
+        any:
+          - kind: function_item
+          - kind: function_signature_item
+          - kind: struct_item
+          - kind: enum_item
+          - kind: union_item
+          - kind: type_item
+          - kind: const_item
+          - kind: static_item
+          - kind: mod_item
+          - kind: trait_item
+          - kind: field_declaration
+            not:
+              inside:
+                kind: field_declaration_list
+                inside:
+                  kind: enum_variant
+        not:
+          has:
+            kind: visibility_modifier
+            regex: '^pub$'
+  - language: python
+    detail: on an internal item
+    rule:
+      kind: string
+      inside:
+        kind: expression_statement
+        not:
+          follows:
+            stopBy: end
+            not:
+              kind: comment
+        inside:
+          kind: block
+          inside:
+            any:
+              - kind: function_definition
+                has:
+                  field: name
+                  regex: '^_[^_]'
+              - kind: class_definition
+                has:
+                  field: name
+                  regex: '^_[^_]'
+              - kind: function_definition
+                inside:
+                  stopBy: end
+                  kind: function_definition
+  - language: [javascript, typescript, tsx]
+    detail: on an internal item
+    rule:
+      kind: comment
+      regex: '^/\*\*'
+      not:
+        any:
+          - precedes:
+              kind: export_statement
+          - inside:
+              stopBy: end
+              kind: export_statement
+  - language: rust
+    detail: outside the public API
+    not_in: [public]
+    rule:
+      any:
+        - kind: line_comment
+        - kind: block_comment
+      has:
+        any:
+          - kind: outer_doc_comment_marker
+          - kind: inner_doc_comment_marker
+  - language: python
+    detail: outside the public API
+    not_in: [public]
+    rule:
+      kind: string
+      inside:
+        kind: expression_statement
+        not:
+          follows:
+            stopBy: end
+            not:
+              kind: comment
+        inside:
+          any:
+            - kind: module
+            - kind: block
+              inside:
+                any:
+                  - kind: function_definition
+                  - kind: class_definition
+  - language: [javascript, typescript, tsx]
+    detail: outside the public API
+    not_in: [public]
+    rule:
+      kind: comment
+      regex: '^/\*\*'

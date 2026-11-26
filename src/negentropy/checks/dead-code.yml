@@ -1,0 +1,12 @@
+name: dead-code
+message: >-
+  An allowance for dead or unused code. Code that nothing uses is deleted, version control keeps it.
+  An old path kept beside its replacement is the one the next reader copies.
+not_in: [test]
+select:
+  - language: rust
+    rule:
+      any:
+        - kind: attribute_item
+        - kind: inner_attribute_item
+      regex: '(allow|expect)\s*\([^)]*\b(dead_code|unused(_[a-z_]+)?)\b'

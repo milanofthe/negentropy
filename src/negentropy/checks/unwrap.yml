@@ -1,0 +1,15 @@
+name: unwrap
+message: >-
+  `unwrap` or `expect` in library code: a panic on a path the caller cannot handle.
+  Return the error, or make the failing state unrepresentable in the type.
+in: [library]
+not_in: [test]
+select:
+  - language: rust
+    rule:
+      kind: field_identifier
+      regex: '^(unwrap|expect)$'
+      inside:
+        kind: field_expression
+        inside:
+          kind: call_expression

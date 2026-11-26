@@ -4,12 +4,13 @@ import argparse
 import sys
 from pathlib import Path
 
-from negentropy import checks
-from negentropy.checks import commits
+from negentropy import messages
 from negentropy.codebase import Codebase, root_of
 from negentropy.config import Config
-from negentropy.finding import ToolError
+from negentropy.engine import Engine
+from negentropy.finding import Finding, ToolError
 from negentropy.report import render
+from negentropy.rules import Rulebook
 
 
 def parser() -> argparse.ArgumentParser:
@@ -25,30 +26,31 @@ def parser() -> argparse.ArgumentParser:
     return top
 
 
-def run(args: argparse.Namespace) -> list:
-    root = root_of(Path.cwd())
+def run(args: argparse.Namespace, root: Path, book: Rulebook, config: Config) -> list[Finding]:
     if args.command in (None, "check"):
-        return checks.codebase_findings(Codebase(root))
-    config = Config.load(root)
-    named = {check.name for check in checks.active(config.off)}
+        return Engine(Codebase(root, config), book).findings()
+    allowed = config.characters
     if args.command == "message":
-        found = commits.message_findings("commit message", args.file.read_text(encoding="utf-8"), config.characters)
-    else:
-        found = commits.commit_findings(root, args.revisions, config.characters)
-        found += commits.description_findings("pull request title", args.title, config.characters)
-        found += commits.description_findings("pull request description", args.description, config.characters)
-    return [finding for finding in found if finding.check in named]
+        return messages.of_text(book, "commit", "commit message", args.file.read_text(encoding="utf-8"), allowed)
+    return (
+        messages.of_history(book, root, args.revisions, allowed)
+        + messages.of_text(book, "text", "pull request title", args.title, allowed)
+        + messages.of_text(book, "text", "pull request description", args.description, allowed)
+    )
 
 
 def main(argv: list[str] | None = None) -> int:
     sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
     try:
-        found = run(parser().parse_args(argv))
+        root = root_of(Path.cwd())
+        config = Config.load(root)
+        book = Rulebook.load(root, config)
+        found = run(parser().parse_args(argv), root, book, config)
     except ToolError as error:
         print(f"negentropy: {error}", file=sys.stderr)
         return 2
     try:
-        print(render(found, checks.CHECKS), flush=True)
+        print(render(found, book.rules), flush=True)
     except BrokenPipeError:
         sys.stdout = None
     return 1 if found else 0

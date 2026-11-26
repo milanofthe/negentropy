@@ -1,0 +1,57 @@
+name: comment
+message: >-
+  A comment in code. Nothing checks a comment, so it goes stale and the next reader trusts it.
+  Delete it and let the code say it: a name, a type, an assertion or a test.
+  A constraint from outside the repository stays, with a link to its source.
+unless:
+  - 'https?://\S+'
+  - 'SPDX-License-Identifier|Copyright \(c\)|Copyright \d{4}|Licensed under'
+select:
+  - language: rust
+    unless: ['^//\s*SAFETY:']
+    rule:
+      any:
+        - kind: line_comment
+        - kind: block_comment
+      not:
+        has:
+          any:
+            - kind: outer_doc_comment_marker
+            - kind: inner_doc_comment_marker
+  - language: python
+    unless: ['^#(!|\s*(type:|noqa|pragma:|fmt:|ruff:|pylint:|mypy:|pyright:|isort:|-\*-))']
+    rule:
+      kind: comment
+  - language: python
+    rule:
+      kind: string
+      inside:
+        kind: expression_statement
+        follows:
+          stopBy: end
+          not:
+            kind: comment
+  - language: [javascript, typescript, tsx]
+    unless:
+      - 'eslint-|@ts-(expect-error|ignore|nocheck|check)|prettier-ignore|biome-ignore|(c8|v8|istanbul) ignore'
+      - '@vite-ignore|[#@]__PURE__|webpack[A-Z]|svelte-ignore|^///\s*<reference'
+    rule:
+      kind: comment
+      not:
+        regex: '^/\*\*'
+  - language: html
+    unless: ['svelte-ignore|prettier-ignore']
+    rule:
+      kind: comment
+  - language: css
+    unless: ['stylelint-|prettier-ignore']
+    rule:
+      kind: comment
+  - language: bash
+    unless: ['^#!|shellcheck ']
+    rule:
+      kind: comment
+  - language: yaml
+    unless: ['^#!|^#cloud-config|yaml-language-server|prettier-ignore']
+    rule:
+      kind: comment

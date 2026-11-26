@@ -1,0 +1,13 @@
+name: print
+message: >-
+  Printing in library code. A library returns values and reports through the logger its caller set up,
+  so the caller decides what is shown.
+in: [library]
+not_in: [test, binary]
+select:
+  - language: rust
+    rule:
+      kind: identifier
+      regex: '^(println|eprintln|print|eprint|dbg)$'
+      inside:
+        kind: macro_invocation
