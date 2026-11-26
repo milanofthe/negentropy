@@ -394,8 +394,8 @@ def test_a_commit_may_keep_the_findings_of_its_parent_but_not_add_one(repo, monk
 
 
 def test_the_export_of_a_revision_reads_the_archive_to_its_end(repo, tmp_path_factory):
-    sizes_whose_end_marker_starts_a_new_tar_record = (8192, 18432)
-    for size in sizes_whose_end_marker_starts_a_new_tar_record:
+    record_boundary_sizes = (8192, 18432)
+    for size in record_boundary_sizes:
         write(repo, {"wide.txt": "x" * size})
         git(repo, "add", "-A")
         git(repo, "commit", "-q", "-m", "Start")
@@ -409,3 +409,60 @@ def test_a_constant_keeps_the_doc_that_states_where_its_value_comes_from(repo):
     )
     write(repo, {"src/constants.rs": documented, "src/tape.rs": documented})
     assert found(repo) == {("src/tape.rs", 1, "doc-comment")}
+
+
+def test_a_panic_on_a_missing_value_is_an_unwrap_in_another_form(repo):
+    write(repo, {"src/lib.rs": (
+        "enum Shape { Round, Square }\n"
+        "fn first(values: &[u8], found: Option<u8>, parsed: Result<u8, String>, shape: Shape) -> u8 {\n"
+        "    let a = match found {\n"
+        "        Some(value) => value,\n"
+        "        None => unreachable!(\"every item is mapped\"),\n"
+        "    };\n"
+        "    let b = match parsed {\n"
+        "        Ok(value) => value,\n"
+        "        Err(error) => panic!(\"invalid: {error}\"),\n"
+        "    };\n"
+        "    let c = values.first().copied().unwrap_or_else(|| unreachable!(\"not empty\"));\n"
+        "    let d = match shape {\n"
+        "        Shape::Round => 1,\n"
+        "        Shape::Square => unreachable!(\"squares are lowered before\"),\n"
+        "    };\n"
+        "    let Some(e) = found else { unreachable!() };\n"
+        "    assert!(a > 0);\n"
+        "    a + b + c + d + e\n"
+        "}\n"
+    )})
+    assert found(repo) == {
+        ("src/lib.rs", 5, "unwrap"),
+        ("src/lib.rs", 9, "unwrap"),
+        ("src/lib.rs", 11, "unwrap"),
+        ("src/lib.rs", 16, "unwrap"),
+    }
+
+
+def test_a_name_that_is_a_sentence_fails_unless_it_names_a_test(repo):
+    write(repo, {
+        "src/solve.rs": (
+            "fn solve(depth_keeps_primal_and_derivative_solves_apart: usize) -> usize {\n"
+            "    let acc_independent_of_the_kernel_it_folds = depth_keeps_primal_and_derivative_solves_apart;\n"
+            "    let single_live_consumer = acc_independent_of_the_kernel_it_folds;\n"
+            "    single_live_consumer\n"
+            "}\n"
+            "#[test]\n"
+            "fn a_section_runs_on_its_width_whether_the_workers_spin_or_sleep() {}\n"
+        ),
+        "tools/device.py": (
+            "def device_with_an_expensive_prolog_over_its_parameter(card):\n"
+            "    return card\n"
+            "def test_the_solution_matches_the_reference_on_every_pool_width():\n"
+            "    regions_that_decide_half_of_the_tape_and_more = 1\n"
+            "    return regions_that_decide_half_of_the_tape_and_more\n"
+        ),
+    })
+    assert found(repo) == {
+        ("src/solve.rs", 1, "long-name"),
+        ("src/solve.rs", 2, "long-name"),
+        ("tools/device.py", 1, "long-name"),
+        ("tools/device.py", 4, "long-name"),
+    }

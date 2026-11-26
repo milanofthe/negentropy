@@ -5,7 +5,10 @@ message: >-
   better name, a type, an assertion or a test. If the comment gives the reason for a surprising
   choice, put the reason into a name or into a test that fails when the choice is reverted. You may
   keep a comment that describes a constraint from outside the repository if it links to the source of
-  that constraint. In Rust you may keep a comment that starts with `SAFETY:` and stands directly
+  that constraint. A reason that code cannot express, such as a measurement behind a design or the
+  alternative that was rejected, belongs in an issue of the repository, and the code keeps one line
+  with the link to that issue. Collect the reasons of one module in one issue. Do not turn the
+  comment into a long name. In Rust you may keep a comment that starts with `SAFETY:` and stands directly
   before the unsafe code that it justifies. Such a comment may span several lines.
 cleanup: >-
   Work through one file at a time. First find the comments that state a constraint or a reason, which
