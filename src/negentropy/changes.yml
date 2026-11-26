@@ -1,0 +1,139 @@
+intro: >-
+  The following changes do not fail a check, and each of them can be correct. They are listed because
+  each of them can also hide a problem instead of solving it. The owner of the repository reads this
+  list in the pull request. Name each change and its reason when you hand over your work, and undo a
+  change that only made a check or a test pass.
+
+changes:
+  - name: removed-test
+    compare: gone
+    named: '\b(?:fn|def)\s+(\w+)'
+    message: >-
+      These tests existed at the revision and exist no longer, and no test with the same body exists
+      under another name. A removed test no longer guards its property. Keep a test of the property
+      unless another test guards it or the removed test only pinned the implementation.
+    select:
+      - language: rust
+        rule:
+          kind: function_item
+          follows:
+            stopBy:
+              not:
+                kind: attribute_item
+            kind: attribute_item
+            regex: '^#\[(\w+::)*(test|rstest|test_case|bench)\b'
+      - language: python
+        rule:
+          kind: function_definition
+          has:
+            field: name
+            regex: '^test_'
+
+  - name: changed-bound
+    compare: changed
+    named: '\b(?:fn|def|const(?!\s+fn)|static)\s+(?:mut\s+)?(\w+)|^(\w+)\s*[:=]'
+    message: >-
+      These constants and functions in the constants modules of the tests have another value than at
+      the revision. A bound
+      comes from the reference or from an analysis, and never from what the code reaches today. If the
+      code misses a derived bound, the test has found a defect in the code, which gets reported and not
+      hidden behind a wider bound.
+    select:
+      - language: rust
+        in: [test, constants]
+        rule:
+          any:
+            - kind: const_item
+            - kind: static_item
+      - language: rust
+        in: [test, constants]
+        rule:
+          kind: function_item
+      - language: python
+        in: [test, constants]
+        rule:
+          kind: assignment
+          has:
+            field: left
+            regex: '^[A-Z][A-Z0-9_]*$'
+          inside:
+            kind: expression_statement
+            inside:
+              kind: module
+
+  - name: changed-tolerance
+    compare: changed
+    named: '\b(?:fn|def)\s+(\w+)'
+    value: '\b\d[\d_]*\.?[\d_]*[eE]-\d+'
+    through: changed-bound
+    message: >-
+      These tests compare against a tolerance that they did not use at the revision, written in the
+      test or in a constant that the test names. The message of the check `test-bound` says where a
+      tolerance comes from. A tolerance that was widened until the test passed records what the code
+      does today.
+    select:
+      - language: rust
+        rule:
+          kind: function_item
+          follows:
+            stopBy:
+              not:
+                kind: attribute_item
+            kind: attribute_item
+            regex: '^#\[(\w+::)*(test|rstest|test_case|bench)\b'
+      - language: python
+        rule:
+          kind: function_definition
+          has:
+            field: name
+            regex: '^test_'
+
+  - name: suppression
+    compare: more
+    message: >-
+      These files have more lines that suppress a lint, a type check or a test than at the revision. A
+      suppression hides the message and keeps its cause. Fix the cause, or report the finding if the
+      tool is wrong about the code.
+    select:
+      - line: '#!?\[(allow|expect)\s*\(|#\[ignore\b|#\[cfg_attr\([^\]]*\bignore\b'
+        files: ["**/*.rs"]
+      - line: '#\s*noqa\b|#\s*type:\s*ignore\b|#\s*pragma:\s*no cover|\bpytest\.mark\.(skip|skipif|xfail)\b|\bunittest\.skip'
+        files: ["**/*.py"]
+      - line: '\beslint-disable|@ts-(ignore|expect-error|nocheck)\b|\b(it|test|describe)\.(skip|todo)\('
+        files: ["**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx", "**/*.svelte"]
+
+  - name: macro-code
+    compare: more
+    lines: true
+    message: >-
+      These files have more lines inside macro definitions than at the revision. The checks do not read
+      code inside a macro, so code that moves into a macro only leaves the report and keeps its
+      findings.
+    select:
+      - language: rust
+        rule:
+          kind: macro_definition
+
+  - name: unsafe-code
+    compare: more
+    message: >-
+      These files have more unsafe blocks, functions or implementations than at the revision. Unsafe
+      code needs an argument for its soundness, and it is not the way around a finding such as an
+      `unwrap`.
+    select:
+      - language: rust
+        rule:
+          any:
+            - kind: unsafe_block
+            - kind: function_item
+              has:
+                kind: function_modifiers
+                regex: '\bunsafe\b'
+            - kind: impl_item
+              regex: '^unsafe\b'
+
+  - name: exception
+    compare: config
+    message: >-
+      These exceptions in negentropy.toml are new or wider than at the revision. Entries under `allow`,
+      `exempt`, `off` and `budget` are the decision of the owner of the repository.

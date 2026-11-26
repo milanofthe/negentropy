@@ -11,6 +11,11 @@ runs:
       if: github.event_name == 'pull_request'
       env:
         BASE: origin/${{ github.base_ref }}
+      run: negentropy changes "$BASE" | tee -a "$GITHUB_STEP_SUMMARY"
+    - shell: bash
+      if: github.event_name == 'pull_request'
+      env:
+        BASE: origin/${{ github.base_ref }}
         TITLE: ${{ github.event.pull_request.title }}
         DESCRIPTION: ${{ github.event.pull_request.body }}
       run: negentropy commits "$BASE..HEAD" --title "$TITLE" --description "$DESCRIPTION"

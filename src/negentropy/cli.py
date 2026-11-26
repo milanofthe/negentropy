@@ -5,7 +5,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-from negentropy import messages
+from negentropy import changes, messages
 from negentropy.codebase import Codebase, changed_since, export, has_revision, root_of
 from negentropy.config import Config
 from negentropy.engine import Engine
@@ -28,6 +28,8 @@ def parser() -> argparse.ArgumentParser:
     history.add_argument("revisions")
     history.add_argument("--title", default="", help="the title of the pull request")
     history.add_argument("--description", default="", help="the description of the pull request")
+    changed = commands.add_parser("changes", help="list the changes since a revision that the owner reviews")
+    changed.add_argument("revision")
     return top
 
 
@@ -77,6 +79,9 @@ def main(argv: list[str] | None = None) -> int:
         config = Config.load(root)
         book = Rulebook.load(root, config)
         args = parser().parse_args(argv)
+        if args.command == "changes":
+            print(changes.report(root, args.revision), flush=True)
+            return 0
         found = run(args, root, book, config)
     except ToolError as error:
         print(f"negentropy: {error}", file=sys.stderr)
