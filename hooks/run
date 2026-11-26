@@ -4,9 +4,13 @@ shift
 root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
 
 if [ -f "$root/negentropy.toml" ]; then
+	negentropy=$(command -v negentropy || command -v "$HOME/.local/bin/negentropy") || {
+		echo "negentropy is not installed or not on PATH: pipx install git+https://github.com/milanofthe/negentropy" >&2
+		exit 1
+	}
 	case "$name" in
-	pre-commit) negentropy check || exit 1 ;;
-	commit-msg) negentropy message "$1" || exit 1 ;;
+	pre-commit) "$negentropy" check || exit 1 ;;
+	commit-msg) "$negentropy" message "$1" || exit 1 ;;
 	esac
 fi
 

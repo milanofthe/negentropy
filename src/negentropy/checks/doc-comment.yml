@@ -48,6 +48,38 @@ select:
           has:
             kind: visibility_modifier
             regex: '^pub$'
+  - language: rust
+    detail: the item is internal
+    rule:
+      all:
+        - any:
+            - kind: line_comment
+            - kind: block_comment
+        - has:
+            kind: outer_doc_comment_marker
+        - any:
+            - precedes:
+                stopBy:
+                  not:
+                    any:
+                      - kind: line_comment
+                      - kind: block_comment
+                      - kind: attribute_item
+                kind: enum_variant
+              inside:
+                kind: enum_variant_list
+                inside:
+                  kind: enum_item
+                  not:
+                    has:
+                      kind: visibility_modifier
+                      regex: '^pub$'
+            - inside:
+                stopBy: end
+                kind: macro_invocation
+                has:
+                  field: macro
+                  regex: '^thread_local$'
   - language: python
     detail: the item is internal
     rule:
