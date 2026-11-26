@@ -5,7 +5,8 @@ message: >-
   better name, a type, an assertion or a test. If the comment gives the reason for a surprising
   choice, put the reason into a name or into a test that fails when the choice is reverted. You may
   keep a comment that describes a constraint from outside the repository if it links to the source of
-  that constraint.
+  that constraint. In Rust you may keep a comment that starts with `SAFETY:` and stands directly
+  before the unsafe code that it justifies. Such a comment may span several lines.
 cleanup: >-
   Work through one file at a time. First find the comments that state a constraint or a reason, which
   often contain words such as must, never, before or because, and express each one in code or in a
@@ -17,16 +18,33 @@ unless:
   - 'SPDX-License-Identifier|Copyright \(c\)|Copyright \d{4}|Licensed under'
 select:
   - language: rust
-    unless: ['^//\s*SAFETY:']
     rule:
-      any:
-        - kind: line_comment
-        - kind: block_comment
-      not:
-        has:
-          any:
-            - kind: outer_doc_comment_marker
-            - kind: inner_doc_comment_marker
+      all:
+        - any:
+            - kind: line_comment
+            - kind: block_comment
+        - not:
+            has:
+              any:
+                - kind: outer_doc_comment_marker
+                - kind: inner_doc_comment_marker
+        - not:
+            all:
+              - any:
+                  - regex: '^//\s*SAFETY:'
+                  - follows:
+                      stopBy:
+                        not:
+                          kind: line_comment
+                      kind: line_comment
+                      regex: '^//\s*SAFETY:'
+              - precedes:
+                  stopBy:
+                    not:
+                      kind: line_comment
+                  not:
+                    kind: line_comment
+                  regex: '\bunsafe\b'
   - language: python
     unless: ['^#(!|\s*(type:|noqa|pragma:|fmt:|ruff:|pylint:|mypy:|pyright:|isort:|-\*-))']
     rule:

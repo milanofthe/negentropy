@@ -46,9 +46,11 @@ in the code, so that the owner of the file decides about them.
 
 negentropy can run in three places:
 
-- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.3.0` after a checkout with
+- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.4.0` after a checkout with
   `fetch-depth: 0`.
-- At every commit: run `git config --global core.hooksPath <clone>/hooks` once per machine.
+- At every commit: run `git config --global core.hooksPath <clone>/hooks` once per machine. The hook
+  runs `negentropy check --against HEAD`, which accepts a commit if no check has more findings than
+  at `HEAD`, so that a cleanup can be committed in steps.
 - After every edit by a coding agent: register `sh <clone>/hooks/agent` as a hook of the agent.
 
 negentropy is released under the MIT license.

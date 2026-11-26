@@ -32,6 +32,8 @@ scopes:
       - "**/benches/**"
       - "**/examples/**"
       - "**/tests.rs"
+      - "**/*_tests.rs"
+      - "**/*_test.rs"
       - "**/test_*.py"
       - "**/*_test.py"
       - "**/conftest.py"

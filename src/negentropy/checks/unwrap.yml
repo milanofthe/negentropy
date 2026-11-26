@@ -4,7 +4,9 @@ message: >-
   Return the error to the caller, or change the types so that the failing state cannot occur. Do not
   replace the panic with a silent fallback, because the caller must be able to notice the failure. If
   the value can only be missing through a bug in this crate, and the types cannot exclude that without
-  a larger change, ask the owner of negentropy.toml to allow this line.
+  a larger change, ask the owner of negentropy.toml to allow this line. An `unwrap` directly on
+  `lock()`, `read()` or `write()` is not reported, because it only passes on the panic of the
+  thread that poisoned the lock.
 cleanup: >-
   Start with the functions that already return a Result, where the error can be passed on with `?`.
   For the other functions, decide whether the failure is an error for the caller or a state that the
@@ -20,3 +22,8 @@ select:
         kind: field_expression
         inside:
           kind: call_expression
+        not:
+          has:
+            field: value
+            kind: call_expression
+            regex: '\.(lock|read|write)\(\s*\)$'
