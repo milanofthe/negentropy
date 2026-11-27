@@ -709,3 +709,21 @@ def test_a_method_of_its_own_named_expect_whose_result_is_passed_on_is_no_unwrap
         ("src/parser.rs", 7, "unwrap"),
         ("src/parser.rs", 8, "unwrap"),
     }
+
+
+def test_ast_grep_is_found_where_python_has_no_user_scripts_directory(monkeypatch):
+    import sysconfig
+
+    from negentropy import syntax
+
+    found = syntax.ast_grep()
+    path_of = sysconfig.get_path
+
+    def without_user_scheme(name, scheme=None, *args, **kwargs):
+        if scheme is not None:
+            raise AttributeError("userbase")
+        return path_of(name, *args, **kwargs)
+
+    monkeypatch.setattr(sysconfig, "get_path", without_user_scheme)
+    assert syntax.ast_grep() == found
+
