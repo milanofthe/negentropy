@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import os
 import shutil
@@ -29,7 +30,9 @@ class Match:
 
 def ast_grep() -> str:
     names = ("ast-grep", "ast-grep.exe")
-    directories = {sysconfig.get_path("scripts"), sysconfig.get_path("scripts", f"{os.name}_user")}
+    directories = {sysconfig.get_path("scripts")}
+    with contextlib.suppress(KeyError, AttributeError):
+        directories.add(sysconfig.get_path("scripts", f"{os.name}_user"))
     candidates = [Path(directory) / name for directory in directories for name in names]
     found = next((str(path) for path in candidates if path.exists()), None) or shutil.which("ast-grep")
     if not found:
