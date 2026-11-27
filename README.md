@@ -44,6 +44,11 @@ match = '^src/pool\.rs: .*unreachable!'
 reason = "The trait erases the result type, so the fix belongs in the crate that defines it."
 ```
 
+The files under `constants` are the constants modules of the codebase. Without the key, these are
+the files `constants.rs` and `constants.py` and the files in a directory `constants`. In a constants
+module a doc comment may stay on a constant, a static or a function, also outside the paths under
+`public`, so that the measurement or the derivation stands next to the value.
+
 An entry under `allow` is a regular expression for one check. A finding of that check is not
 reported if the expression matches its path followed by its source line, for example
 `src/sinks.rs: let color = std::env::var_os("NO_COLOR");`. Exceptions belong in this file and not
@@ -65,7 +70,7 @@ where each of these changes needs a reason.
 
 negentropy runs in two places. It installs no hooks and never runs by itself.
 
-- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.13.0` after a checkout with
+- In CI before a merge: add the step `uses: milanofthe/negentropy@v1.14.0` after a checkout with
   `fetch-depth: 0`. The step writes the report and the list of `negentropy changes` to the summary of
   the run.
 - By hand in a checkout: `negentropy check` reports the whole codebase. `negentropy check --against

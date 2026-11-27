@@ -4,15 +4,18 @@ message: >-
   inside the paths that negentropy.toml lists under `public`. An item that an attribute exports to
   another language, such as `#[pyfunction]`, `#[pymethods]`, `#[wasm_bindgen]` or `#[no_mangle]`,
   counts as exported. Delete the doc comment. If the item
-  needs an explanation, rename or restructure it. In the constants module a doc comment may stay
-  on any constant, so that the measurement or the derivation stands next to its value.
+  needs an explanation, rename or restructure it. In a constants module, which is a file that
+  negentropy.toml lists under `constants`, a doc comment may stay on a constant, a static or a
+  function, wherever the module is, so that the measurement or the derivation stands next to the
+  value. The doc comment of the module itself and the doc comments on other items in it follow the
+  rules above.
 cleanup: >-
   Decide first which paths are the public API and list them under `public` in negentropy.toml. Then
   delete the doc comments outside those paths and on internal items.
+not_in: [derivation]
 select:
   - language: rust
     detail: the item is internal
-    not_in: [constants]
     rule:
       any:
         - kind: line_comment
@@ -77,7 +80,6 @@ select:
                     regex: '^#\[(pyo3::)?(pymethods|wasm_bindgen)'
   - language: rust
     detail: the item is internal
-    not_in: [constants]
     rule:
       all:
         - any:
@@ -110,7 +112,6 @@ select:
                   regex: '^thread_local$'
   - language: python
     detail: the item is internal
-    not_in: [constants]
     rule:
       kind: string
       inside:
@@ -138,7 +139,6 @@ select:
                   kind: function_definition
   - language: [javascript, typescript, tsx]
     detail: the item is internal
-    not_in: [constants]
     rule:
       kind: comment
       regex: '^/\*\*'

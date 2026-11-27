@@ -126,6 +126,63 @@ scopes:
     default: ["**/constants.rs", "**/constants/**", "**/constants.py"]
   public:
     config: public
+  derivation:
+    select:
+      - language: rust
+        in: [constants]
+        rule:
+          any:
+            - kind: line_comment
+            - kind: block_comment
+          has:
+            kind: outer_doc_comment_marker
+          precedes:
+            stopBy:
+              not:
+                any:
+                  - kind: line_comment
+                  - kind: block_comment
+                  - kind: attribute_item
+            any:
+              - kind: const_item
+              - kind: static_item
+              - kind: function_item
+      - language: python
+        in: [constants]
+        rule:
+          kind: string
+          inside:
+            kind: expression_statement
+            not:
+              follows:
+                stopBy: end
+                not:
+                  kind: comment
+            inside:
+              kind: block
+              inside:
+                kind: function_definition
+                any:
+                  - inside:
+                      kind: module
+                  - inside:
+                      kind: decorated_definition
+                      inside:
+                        kind: module
+      - language: [javascript, typescript, tsx]
+        in: [constants]
+        rule:
+          kind: comment
+          regex: '^/\*\*'
+          precedes:
+            any:
+              - kind: lexical_declaration
+              - kind: function_declaration
+              - kind: export_statement
+                has:
+                  any:
+                    - kind: lexical_declaration
+                    - kind: function_declaration
   content:
     config: markdown
     default: []
