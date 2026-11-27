@@ -27,6 +27,7 @@ class Engine:
         self.codebase = codebase
         self.book = book or Rulebook.load(codebase.root, codebase.config)
         self.matched: set[int] = set()
+        self.spans: dict[str, dict[str, list[tuple[int, int]]]] = {}
 
     @cached_property
     def parsed(self) -> dict[Selector, list[Match]]:
@@ -35,20 +36,19 @@ class Engine:
         syntactic = [selector for selector in of_rules + of_scopes if selector.rule is not None]
         return parse(self.codebase.root, self.codebase.files, syntactic, self.book.languages)
 
-    @cached_property
-    def ranges(self) -> dict[tuple[str, str], list[tuple[int, int]]]:
-        ranges: dict[tuple[str, str], list[tuple[int, int]]] = {}
-        for name, scope in self.book.scopes.items():
-            for selector in scope.selectors:
-                for match in self.parsed[selector]:
-                    ranges.setdefault((name, match.path), []).append((match.start, match.end))
-        return ranges
+    def ranges(self, name: str) -> dict[str, list[tuple[int, int]]]:
+        if name not in self.spans:
+            self.spans[name] = {}
+            for selector in self.book.scopes[name].selectors:
+                for match in self.selected(selector):
+                    self.spans[name].setdefault(match.path, []).append((match.start, match.end))
+        return self.spans[name]
 
     def inside(self, name: str, match: Match) -> bool:
         scope = self.book.scopes[name]
         if scope.everywhere or matches(match.path, scope.paths):
             return True
-        spans = self.ranges.get((name, match.path), ())
+        spans = self.ranges(name).get(match.path, ())
         return match.start is not None and any(start <= match.start < end for start, end in spans)
 
     def raw(self, selector: Selector) -> Iterator[Match]:

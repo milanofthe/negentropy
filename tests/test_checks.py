@@ -653,3 +653,59 @@ def test_a_new_function_that_resembles_an_existing_one_is_listed(repo, monkeypat
     listed = [line for line in capsys.readouterr().out.splitlines() if line.startswith("- ")]
     assert len(listed) == 1
     assert re.fullmatch(r"- src/upper\.rs:1  upper_solve: [89]\d percent like lower_solve at src/lower\.rs:1", listed[0])
+
+
+def test_a_constants_module_keeps_the_derivation_of_its_values_outside_the_public_api(repo):
+    write(repo, {
+        "src/constants.rs": (
+            "//! The bounds of the solver.\n"
+            "/// Measured on the reference machine: a block of 16 runs in 0.15 of the time one by one.\n"
+            "pub const LANES_WIDE: usize = 16;\n"
+            "/// The unit roundoff of f64 in round to nearest, from IEEE 754.\n"
+            "static UNIT_ROUNDOFF: f64 = f64::EPSILON / 2.0;\n"
+            "/// Higham, Accuracy and Stability, Lemma 3.1: the bound of k rounding errors.\n"
+            "pub fn gamma(k: usize) -> f64 {\n"
+            "    k as f64 * UNIT_ROUNDOFF / (1.0 - k as f64 * UNIT_ROUNDOFF)\n"
+            "}\n"
+            "/// A pair of bounds.\n"
+            "struct Bounds;\n"
+        ),
+        "tests/constants.py": (
+            "\"\"\"The bounds of the tests.\"\"\"\n"
+            "def gamma(k):\n"
+            "    \"\"\"Higham, Accuracy and Stability, Lemma 3.1: the bound of k rounding errors.\"\"\"\n"
+            "    return k * UNIT_ROUNDOFF / (1 - k * UNIT_ROUNDOFF)\n"
+            "class Bounds:\n"
+            "    \"\"\"A pair of bounds.\"\"\"\n"
+        ),
+        "src/tape.rs": "/// Measured on the reference machine.\nconst LANES_WIDE: usize = 16;\n",
+        "negentropy.toml": 'public = ["src/api/**"]\n',
+    })
+    assert {entry for entry in found(repo) if entry[2] == "doc-comment"} == {
+        ("src/constants.rs", 1, "doc-comment"),
+        ("src/constants.rs", 10, "doc-comment"),
+        ("tests/constants.py", 1, "doc-comment"),
+        ("tests/constants.py", 6, "doc-comment"),
+        ("src/tape.rs", 1, "doc-comment"),
+    }
+
+
+def test_a_method_of_its_own_named_expect_whose_result_is_passed_on_is_no_unwrap(repo):
+    write(repo, {"src/parser.rs": (
+        "impl Parser {\n"
+        "    fn group(&mut self) -> PResult<Expr> {\n"
+        "        self.expect(Tok::LParen)?;\n"
+        "        let inner = self.expr()?;\n"
+        "        self.expect(Tok::RParen)?;\n"
+        "        let line = self.lines.next().unwrap()?;\n"
+        "        let name = self.names.pop().expect(\"a name is pushed before\")?;\n"
+        "        self.expect(Tok::Comma);\n"
+        "        Ok(inner)\n"
+        "    }\n"
+        "}\n"
+    )})
+    assert found(repo) == {
+        ("src/parser.rs", 6, "unwrap"),
+        ("src/parser.rs", 7, "unwrap"),
+        ("src/parser.rs", 8, "unwrap"),
+    }

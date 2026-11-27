@@ -10,7 +10,11 @@ message: >-
   `unwrap` directly on
   `lock()`, `read()` or `write()` is not reported, because it only passes on the panic of the
   thread that poisoned the lock. A panic macro such as `unreachable!` on the `None` or `Err` branch
-  of a value is reported like an `unwrap`, because it is the same panic in another form.
+  of a value is reported like an `unwrap`, because it is the same panic in another form. A call
+  of `unwrap` or `expect` that is passed on with `?` and has an argument that is not a string
+  literal is not reported, because it is a method of the codebase that returns a Result, such as
+  `self.expect(Token::LParen)?` in a parser. A call `unwrap()?` or `expect("...")?` is still
+  reported, because there `?` applies to an inner value, as in `lines.next().unwrap()?`.
 cleanup: >-
   Start with the functions that already return a Result, where the error can be passed on with `?`.
   For the other functions, decide whether the failure is an error for the caller or a state that the
@@ -26,6 +30,13 @@ select:
         kind: field_expression
         inside:
           kind: call_expression
+          not:
+            inside:
+              kind: try_expression
+            has:
+              field: arguments
+              not:
+                regex: '^\(\s*(\)|"|r#*")'
         not:
           has:
             field: value
